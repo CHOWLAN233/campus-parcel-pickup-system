@@ -1,0 +1,46 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+coverage/
+dist/
+
+# Python and Selenium
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Test output and logs
+logs/
+test-results/
+tests/selenium/screenshots/
+tests/jmeter/results/
+*.jtl
+
+# Database and local state
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+
+# Hidden seeded-defect information
+docs/private/*
+!docs/private/README.md
+
+# Private individual course logbooks
+docs/logbooks/*
+!docs/logbooks/.gitkeep
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
