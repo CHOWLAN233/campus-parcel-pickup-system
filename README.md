@@ -1,24 +1,25 @@
 # Campus Parcel Pickup and Appointment System
 
-SWE301 小组项目协作仓库。项目实现校园快递站的学生注册/登录、取件时段预约与容量限制，并以邀请码支持每次最多代取两名其他学生的包裹。
+SWE301 小组项目协作仓库。项目实现校园快递站的学生注册/登录、取件时段预约与容量限制，并以邀请码支持每笔预约代取一名其他学生的包裹。
 
 ## 当前范围
 
 第一阶段只实现可演示、可测试的核心流程：
 
-1. 测试学生账号注册、登录和退出。注册包含 Student ID/Username、唯一 Email、Password 和 Confirm Password，并执行服务端校验；登录使用 Student ID + Password。
-2. 查看取件时段、剩余名额并创建预约。
-3. 服务端阻止超额预约和重复预约。
-4. 生成并绑定邀请码；同一预约最多绑定两名他人。
+1. 使用虚拟 Student ID 白名单注册、登录和退出；数据库只保存密码哈希。
+2. 查询未来 3 天的 1 小时时段及 `capacity/occupied/remaining/status`。
+3. 创建唯一有效预约；普通预约占 1 个容量单位，代取一人占 2 个容量单位。
+4. 服务端事务阻止超过每时段 60 个容量单位、重复预约和邀请码重复消费。
+5. 生成 1 小时内可绑定的一次性邀请码；同一预约最多绑定一名他人。
 
 取消预约、签到、违约记录和管理端属于后续阶段。项目仅使用虚构账号与包裹数据。
 
 ## 技术栈
 
-- 前端：HTML5、CSS3、Bootstrap 5、原生 JavaScript（Fetch API）
+- 前端：HTML5、CSS3、原生 JavaScript（Fetch API）
 - 后端：Node.js 22 LTS、Express 5、JavaScript ESM
-- 数据库：PostgreSQL 16、`pg` 驱动、SQL migration/seed 脚本
-- 登录与安全：`express-session`、PostgreSQL session store、`bcrypt`、`helmet`
+- 数据库：SQLite、SQL schema/seed 脚本
+- 登录与安全：`express-session`、持久 session store、`bcrypt`、`helmet`
 - 后端测试：Vitest、Supertest
 - 浏览器自动化：Python、pytest、Selenium 4、Page Object Model
 - 性能测试：Apache JMeter（作业指定）
@@ -31,7 +32,7 @@ SWE301 小组项目协作仓库。项目实现校园快递站的学生注册/登
 ```text
 frontend/                 页面、样式与浏览器端脚本
 backend/                  API、业务逻辑、权限与事务
-database/                 migration 与虚构测试数据
+database/                 SQLite schema、seed 与虚构测试数据
 tests/unit/               单元测试
 tests/integration/        API 与数据库集成测试
 tests/selenium/           Selenium POM、用例与运行证据
@@ -61,9 +62,9 @@ role-logs/                六个 SA3 角色的负责人、交付物与每周更�
 
 - 隐藏 Bug Log 不得推送到公开仓库，也不能让外部测试组在 Phase 2 前看到。
 - 不提交真实学号、真实密码、真实快递信息、`.env`、数据库文件或测试结果大文件。
-- 容量检查与预约创建必须位于同一个数据库事务中；前端禁用按钮不能替代服务端校验。
+- 容量检查、预约创建和邀请码预留必须位于同一个 SQLite 事务中；前端禁用按钮不能替代服务端校验。
 - 邀请码与密码均不得明文持久化或写入日志。
 
 ## 下一步
 
-确认待定业务规则后再创建可运行代码：时段长度和容量、取消期限、No-show 判定、邀请码有效期，以及每名学生允许同时持有的有效预约数。
+后端先冻结公开 API 合同、ERD 与虚构 seed 数据，再实现注册/登录、时段查询和普通预约事务。执行顺序见 [后端开工计划](docs/backend-start-plan.md)；仍待小组确认的规则记录在 [最终需求基线摘要](docs/requirements/SRS-v1.1-baseline.md)，不得擅自编码为正式规则。

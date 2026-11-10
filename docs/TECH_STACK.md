@@ -2,16 +2,16 @@
 
 ## 结论
 
-本项目采用“原生浏览器前端 + Express 单体 API + PostgreSQL”的单仓库结构。该方案足够覆盖课程要求，同时能让两名 Developer 分别负责界面和后端/数据库，并通过清晰接口并行工作。
+本项目依据 SRS v1.1 采用“原生浏览器前端 + Express 单体 API + SQLite”的单仓库结构。该方案无前端构建链，便于两名 Developer 分别负责界面和后端/数据库，并以同一份 API 合同并行工作。
 
 ## 选型
 
 | 层级 | 选择 | 用途与理由 |
 | --- | --- | --- |
-| 前端 | HTML5、CSS3、Bootstrap 5、原生 JavaScript | 无额外构建链，表单和响应式页面可快速完成；稳定的元素定位也便于 Selenium POM。 |
+| 前端 | HTML5、CSS3、原生 JavaScript | 无额外构建链，表单和多页面流程可快速完成；稳定的元素定位也便于 Selenium POM。 |
 | 后端 | Node.js 22 LTS、Express 5、JavaScript ESM | 适合 REST API、表单处理和服务端校验；前后端都使用 JavaScript，降低协作成本。 |
-| 数据库 | PostgreSQL 16、`pg`、SQL migrations | 事务和行锁适合验证“最后一个名额只能由一人预约”、邀请码单次占用等并发规则。 |
-| 身份认证 | `express-session`、PostgreSQL session store、`bcrypt` | 使用服务器端会话；密码只保存强哈希，退出后会话失效。 |
+| 数据库 | SQLite、SQL schema/seed | 符合最终需求，部署与虚构测试数据准备简单；使用事务和原子条件更新保证容量与邀请码一致性。 |
+| 身份认证 | `express-session`、持久 session store、`bcrypt` | 使用服务器端会话；密码只保存强哈希，退出后会话失效。生产/共享环境禁止内存 session store。 |
 | 安全基线 | `helmet`、参数化 SQL、角色中间件 | 支持输入校验、常见响应头、SQL 注入防护和 Student/Staff/Admin 权限验证。 |
 | 单元与 API 测试 | Vitest、Supertest | 覆盖服务端校验、状态转换、权限和错误响应，无需启动真实浏览器。 |
 | 系统测试 | Python、pytest、Selenium 4、Page Object Model | 满足作业对 Selenium 与 POM 的要求，并保留执行日志和截图证据。 |
@@ -26,9 +26,9 @@
 
 | 需求/作业要求 | 技术支持 |
 | --- | --- |
-| 注册、登录、服务端校验 | Express 路由、中间件、session、bcrypt；注册验证 Username、唯一 Email、密码强度与 Confirm Password，登录保留 v1 指定的 Student ID + Password |
-| 时段容量不得超卖 | PostgreSQL 事务、锁或原子条件更新、集成测试、JMeter 并发场景 |
-| 同一预约最多代取两人 | 数据库约束 + service 层校验 + 边界值测试 |
+| 注册、登录、服务端校验 | Express 路由、中间件、session、bcrypt；只允许虚拟 Student ID 白名单，禁止真实校园凭据 |
+| 时段容量不得超卖 | SQLite 事务、原子条件更新、集成测试、JMeter 并发场景 |
+| 同一预约最多代取一人 | 数据库唯一约束 + service 层校验 + 边界值测试；第二人必须被拒绝且数据不变 |
 | 邀请码不可猜测、不可重复使用 | `crypto` 安全随机值、只存哈希、唯一约束、事务状态更新 |
 | 越权访问返回 403 | 服务端 role/ownership middleware + Supertest |
 | 至少 4 个预设缺陷 | 本地 `docs/private/` Bug Log；公开仓库只保留无内容模板 |
@@ -43,13 +43,12 @@
 - `database/` 管理结构变更与虚构测试数据。
 - `tests/` 按 unit、integration、selenium、jmeter 分开保存，测试证据可追踪到 FR/TC/BUG ID。
 
-## 待小组确认
+## 已冻结的 v1.1 规则
 
-- 每个时段默认 30 分钟、容量 10 人。
-- 代取两人仍只占预约人的一个时段名额。
-- 每位学生最多持有一笔未来有效预约。
-- 邀请码 24 小时有效、单次使用。
-- 预约开始前 30 分钟停止自行取消。
-- 时段结束 15 分钟后未签到才可标记 No-show。
+- 每个时段 1 小时、容量 60 个单位；普通预约占 1，代取一人占 2。
+- 每笔预约最多代取一名他人；尝试添加第二人必须拒绝且不改变已有数据。
+- 每名学生同时最多持有一笔未来有效预约。
+- 邀请码自签发起 1 小时内可绑定；使用安全随机数，数据库只保存哈希。
+- 仅使用虚拟 Student ID、虚构包裹和 SQLite 测试数据库。
 
-这些值应在编码前记录为正式决策，以免测试预期与实现不一致。
+取消截止、未来 3 天的精确日期边界、绑定后的邀请码生命周期及 No-show 精确时间仍未冻结，见需求基线摘要。
