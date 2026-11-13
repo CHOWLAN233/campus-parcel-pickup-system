@@ -73,7 +73,7 @@
             <!-- aria-describedby 关联帮助文字和错误提示，便于屏幕阅读器朗读。 -->
             <label for="student-id">Test student ID</label>
             <input id="student-id" name="studentId" type="text" autocomplete="username" placeholder="e.g. STU0001" aria-describedby="student-id-hint student-id-error" required>
-            <p id="student-id-hint" class="field-hint">Use the test student ID provided by your team</p>
+            <p id="student-id-hint" class="field-hint">Use your assigned test ID: uppercase STU followed by four digits, such as STU0001.</p>
             <p id="student-id-error" class="field-error" hidden></p>
           </div>
 
@@ -81,9 +81,10 @@
             <label for="password">Password</label>
             <div class="password-input">
               <!-- 显示按钮同步切换两个密码框；type="button" 避免触发表单提交。 -->
-              <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter your password" aria-describedby="password-error" required>
+              <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter your password" aria-describedby="password-hint password-error" required>
               <button id="toggle-password" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" aria-controls="password confirm-password">Show</button>
             </div>
+            <p id="password-hint" class="field-hint">Use 8–128 characters, including at least one digit and one symbol, such as !.</p>
             <p id="password-error" class="field-error" hidden></p>
           </div>
 
