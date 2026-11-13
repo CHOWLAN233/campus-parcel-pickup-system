@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ExpressBook: book your campus parcel pickup with a test student account.">
+    <title>Sign In · ExpressBook</title>
+    <!-- HTML 负责内容；CSS 负责外观。路径相对于当前 HTML 文件。 -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:,">
+    <!-- defer 表示等 HTML 解析完成后再运行；api.js 必须先于 auth.js。 -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth.js" defer></script>
+  </head>
+  <body>
+    <!-- 页头：展示 ExpressBook 品牌，点击品牌可返回登录页。 -->
+    <header class="site-header">
+      <a class="brand" href="login.html" aria-label="ExpressBook sign-in page">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg>
+        </span>
+        <span>ExpressBook <span class="brand-english">CAMPUS PARCEL</span></span>
+      </a>
+      <span class="header-tag"><span class="status-dot" aria-hidden="true"></span>STUDENT SERVICES</span>
+    </header>
+
+    <main class="login-layout">
+      <!-- 左侧介绍区：展示项目标语、包裹插图和取件流程。 -->
+      <aside class="intro-panel" aria-labelledby="intro-title">
+        <div class="intro-topline"><span class="eyebrow">YOUR TIME, WELL PLANNED</span><span aria-hidden="true">↗</span></div>
+        <h2 id="intro-title">Book ahead.<br>Pick up with ease.</h2>
+        <p class="intro-description">Skip the queue.<br>Make more time for campus life.</p>
+
+        <!-- 内联 SVG 是矢量插图，不需要额外下载图片或安装依赖。 -->
+        <div class="parcel-art" aria-hidden="true">
+          <svg viewBox="0 0 440 300" fill="none">
+            <ellipse cx="221" cy="258" rx="144" ry="19" fill="#0c2b27" opacity=".36"/>
+            <circle cx="224" cy="144" r="112" stroke="#83ad9e" stroke-opacity=".22" stroke-dasharray="5 9"/>
+            <path d="m104 117 119-58 117 58-117 62-119-62Z" fill="#e2cfab"/>
+            <path d="m104 117 119 62v99l-119-63v-98Z" fill="#c4a77d"/>
+            <path d="m223 179 117-62v98l-117 63v-99Z" fill="#e8d8b9"/>
+            <path d="m150 94 119 62 24-13-119-61-24 12Z" fill="#f5ead4"/>
+            <path d="m269 156 24-13v46l-12-2-12 14v-45Z" fill="#f5ead4"/>
+            <path d="m129 170 48 25v29l-48-25v-29Z" fill="#f6eddb"/>
+            <path d="m137 183 31 16m-31-8 20 10" stroke="#a68b63" stroke-width="3"/>
+            <rect x="285" y="44" width="66" height="66" rx="21" fill="#d5e9b0"/>
+            <path d="m305 76 9 9 18-20" stroke="#234b3d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M87 71v18m-9-9h18m255 154v14m-7-7h14" stroke="#92b5a6" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="367" cy="145" r="4" fill="#d5e9b0"/>
+          </svg>
+        </div>
+
+        <div class="journey" aria-label="How it works">
+          <span><b>01</b> Sign in</span>
+          <span class="journey-line" aria-hidden="true"></span>
+          <span><b>02</b> Book a slot</span>
+          <span class="journey-line" aria-hidden="true"></span>
+          <span><b>03</b> Pick up</span>
+        </div>
+      </aside>
+
+      <!-- 右侧登录区：元素 id 供 auth.js 查找和绑定事件，修改时需同步脚本。 -->
+      <section class="form-panel" aria-labelledby="login-title">
+        <div class="form-heading">
+          <span class="section-label">STUDENT LOGIN</span>
+          <h1 id="login-title">Welcome back</h1>
+          <p>Sign in to ExpressBook and plan your next pickup.</p>
+        </div>
+
+        <!-- 禁用浏览器默认校验提示，由 auth.js 统一显示英文错误信息。 -->
+        <form id="login-form" novalidate>
+          <div class="form-field">
+            <!-- aria-describedby 关联帮助文字和错误提示，便于屏幕阅读器朗读。 -->
+            <label for="student-id">Test student ID</label>
+            <input id="student-id" name="studentId" type="text" autocomplete="username" placeholder="e.g. STU0001" aria-describedby="student-id-hint student-id-error" required>
+            <p id="student-id-hint" class="field-hint">Use the test student ID provided by your team</p>
+            <p id="student-id-error" class="field-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label for="password">Password</label>
+            <div class="password-input">
+              <!-- 显示按钮只切换密码可见性；type="button" 避免触发表单提交。 -->
+              <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" aria-describedby="password-error" required>
+              <button id="toggle-password" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" aria-controls="password">Show</button>
+            </div>
+            <p id="password-error" class="field-error" hidden></p>
+          </div>
+
+          <!-- textContent 写入提示，避免把接口内容当成 HTML 执行。 -->
+          <p id="form-message" class="form-message" role="status" aria-live="polite" tabindex="-1" hidden></p>
+
+          <button id="login-button" class="primary-button" type="submit">
+            <span id="login-button-label">Sign in</span>
+            <span class="button-arrow" aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <!-- 注册与登录互相导航；只使用普通链接，不保存任何凭据。 -->
+        <p class="auth-switch">New to ExpressBook? <a href="register.html">Create an account <span aria-hidden="true">↗</span></a></p>
+
+      </section>
+    </main>
+
+    <!-- 页脚显示项目名称和当前阶段；禁用脚本时提供下方的使用提示。 -->
+    <footer class="site-footer"><span>ExpressBook · Campus Parcel Pickup Booking</span><span>SWE301 · Phase 1 Interface Preview</span></footer>
+    <noscript><p class="noscript-note">Enable JavaScript to use form validation and sign in.</p></noscript>
+  </body>
+</html>

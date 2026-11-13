@@ -30,6 +30,7 @@ tests/jmeter/results/
 *.sqlite
 *.sqlite3
 *.dump
+backend/data/
 
 # Hidden seeded-defect information
 docs/private/*

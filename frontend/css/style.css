@@ -1,0 +1,155 @@
+/* 1. 公共设置：改这里的颜色变量，就能统一调整页面主题。 */
+:root {
+  --page: #f7f8f4;
+  --surface: #ffffff;
+  --ink: #233b33;
+  --muted: #727b74;
+  --green: #204f41;
+  --green-dark: #173e33;
+  --line: #e0e5de;
+  --error: #ad3434;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 280px;
+  min-height: 100vh;
+  background: var(--page);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; }
+a { color: inherit; }
+/* 确保脚本设置的 hidden 状态不会被其他 display 样式覆盖。 */
+[hidden] { display: none !important; }
+
+/* 为键盘导航保留清晰的焦点边框。 */
+:focus-visible {
+  outline: 3px solid #6b9b72;
+  outline-offset: 4px;
+}
+
+/* 2. 页头：Flex 把品牌和右侧标签排在同一行。 */
+.site-header, .site-footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 34px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 19px; font-weight: 700; }
+.brand-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--green); }
+.brand-icon svg { width: 26px; height: 26px; stroke: #eef4dc; stroke-width: 1.5; stroke-linejoin: round; }
+.brand-english { display: block; margin-top: 3px; font-size: 9px; letter-spacing: 1.8px; font-weight: 500; color: var(--muted); }
+.header-tag { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 100px; font-size: 12px; color: #59675b; }
+.status-dot { width: 6px; height: 6px; background: #6e9369; border-radius: 50%; }
+
+/* 3. 主布局：桌面两列，手机通过下面的媒体查询变成一列。 */
+.login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1040px;
+  margin: 18px auto 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 14px 60px #20382b06;
+}
+
+.intro-panel { background: var(--green-dark); color: #f8faf0; padding: 38px 40px 32px; position: relative; overflow: hidden; }
+.intro-topline { display: flex; align-items: center; justify-content: space-between; color: #afc7af; }
+.eyebrow { font-size: 9px; letter-spacing: 2.2px; }
+.intro-topline > span:last-child { font-size: 22px; }
+.intro-panel h2 { margin: 36px 0 16px; font-size: clamp(34px, 4vw, 46px); font-weight: 600; line-height: 1.4; letter-spacing: 1px; }
+.intro-description { font-size: 14px; line-height: 1.9; color: #b4c9bb; margin: 0; }
+.parcel-art { max-width: 360px; margin: -5px auto -5px; }
+.parcel-art svg { display: block; width: 100%; }
+.journey { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 23px; border-top: 1px solid #ffffff21; font-size: 11px; color: #cbd7c9; }
+.journey > span:not(.journey-line) { display: flex; flex-direction: column; gap: 7px; white-space: nowrap; }
+.journey b { color: #a9bf96; font-size: 10px; letter-spacing: 1px; font-weight: 400; }
+.journey-line { flex: 1; height: 1px; max-width: 35px; background: #ffffff30; }
+
+/* 4. 表单：留白、标签、错误提示和按钮。 */
+.form-panel { padding: 76px 56px 40px; align-self: center; }
+.section-label { color: #667665; font-size: 10px; font-weight: 600; letter-spacing: 1.4px; }
+.form-heading h1 { margin: 17px 0 10px; font-size: 32px; line-height: 1.4; letter-spacing: 1px; font-weight: 650; }
+.form-heading > p { margin: 0; font-size: 13px; line-height: 1.8; color: var(--muted); }
+form { margin-top: 35px; }
+.form-field { margin-bottom: 23px; }
+label { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600; }
+input { width: 100%; height: 50px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: #fcfdfb; color: var(--ink); font-size: 14px; transition: border-color .15s, box-shadow .15s; }
+input::placeholder { color: #9aA197; }
+input:focus { border-color: #628970; box-shadow: 0 0 0 3px #62897016; outline: none; }
+input[aria-invalid="true"] { border-color: var(--error); }
+.field-hint, .field-error { font-size: 11px; margin: 8px 0 0; line-height: 1.6; }
+.field-hint { color: var(--muted); }
+.field-error { color: var(--error); }
+/* 密码按钮定位在输入框内部，右侧内边距为按钮预留空间。 */
+.password-input { position: relative; }
+.password-input input { padding-right: 70px; }
+.password-toggle { position: absolute; right: 5px; top: 5px; height: 40px; min-width: 52px; padding: 0 10px; border: none; border-radius: 6px; background: transparent; color: #687569; font-size: 12px; }
+.password-toggle:hover { background: #eaf0e6; color: var(--green); }
+.primary-button { display: flex; justify-content: center; align-items: center; gap: 12px; width: 100%; min-height: 50px; margin-top: 27px; padding: 12px 18px; background: var(--green); border: 1px solid var(--green); border-radius: 9px; color: #fff; font-weight: 600; font-size: 14px; transition: background .15s, transform .15s; }
+.primary-button:hover:not(:disabled) { background: #123c2e; }
+.primary-button:active:not(:disabled) { transform: translateY(1px); }
+.primary-button:disabled { opacity: .65; }
+.button-arrow { font-size: 19px; font-weight: 400; }
+.form-message { margin: 0 0 18px; padding: 12px 14px; border-radius: 8px; background: #f0f4eb; color: #3c5a37; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+/* 对应 auth.js 中 showMessage 设置的 data-type。 */
+.form-message[data-type="error"] { background: #fdf0ed; color: #983b35; }
+.form-message[data-type="success"] { background: #eaf4eb; color: #2b663f; }
+.account-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 28px; padding-top: 23px; border-top: 1px solid #edf0e9; color: var(--muted); }
+.account-note svg { flex: 0 0 17px; width: 17px; height: 17px; margin-top: 3px; stroke: #8a9c80; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.account-note p { margin: 0; font-size: 11px; line-height: 1.9; }
+.site-footer { max-width: 1120px; padding-top: 27px; padding-bottom: 28px; font-size: 11px; color: #8b9387; }
+.noscript-note { text-align: center; padding: 10px 24px; color: var(--error); }
+
+/* 注册页复用登录布局；额外字段通过减少顶部留白保持视觉平衡。 */
+.register-panel { padding-top: 42px; }
+.register-panel form { margin-top: 26px; }
+.auth-switch { margin: 25px 0 0; font-size: 12px; color: var(--muted); line-height: 1.9; }
+.auth-switch a, .registration-success-link { color: var(--green); font-weight: 600; text-underline-offset: 4px; }
+.registration-success-link { display: inline-block; margin-top: 16px; font-size: 13px; }
+
+/* 5. 响应式：当屏幕较小时，让表单仍然易读、易点击。 */
+@media (max-width: 1100px) {
+  .login-layout { margin: 12px 32px 0; }
+  .form-panel { padding: 55px 36px 36px; }
+  .intro-panel { padding-left: 32px; padding-right: 32px; }
+}
+
+@media (max-width: 700px) {
+  .site-header { padding: 23px 22px; }
+  .brand { font-size: 17px; gap: 9px; }
+  .brand-icon { width: 37px; height: 37px; }
+  .header-tag { padding: 7px 9px; font-size: 10px; }
+  .login-layout { grid-template-columns: 1fr; margin: 6px 18px 0; border-radius: 18px; }
+  .intro-panel { padding: 27px 27px 25px; }
+  .intro-topline { max-width: 300px; }
+  .intro-panel h2 { font-size: 29px; margin: 18px 0 10px; line-height: 1.5; }
+  .intro-panel h2 br { display: none; }
+  .intro-description { font-size: 12px; }
+  .intro-description br { display: none; }
+  .parcel-art, .journey { display: none; }
+  .form-panel { padding: 32px 27px 31px; }
+  .form-heading h1 { font-size: 27px; margin-top: 12px; }
+  form { margin-top: 27px; }
+  input { font-size: 16px; }
+  .site-footer { padding: 24px 22px; align-items: flex-start; flex-direction: column; gap: 7px; font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 尊重系统的减少动态效果设置，关闭过渡动画。 */
+  *, *::before, *::after { transition: none !important; }
+}

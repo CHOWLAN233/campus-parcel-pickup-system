@@ -1,0 +1,81 @@
+/* 功能页复用首页颜色与卡片，统一表单、状态和操作区。 */
+.dashboard-header { flex-wrap: wrap; }
+.dashboard-nav { gap: 18px; flex-wrap: wrap; }
+.dashboard-nav a { font-size: 12px; }
+.user-menu { margin-left: auto; }
+.page-heading { margin-bottom: 28px; }
+.page-heading h1 { margin: 12px 0; font-size: clamp(28px, 4vw, 36px); font-weight: 600; }
+.page-heading p { color: var(--muted); font-size: 14px; line-height: 1.8; max-width: 650px; }
+.page-heading .dashboard-tools { float: right; }
+.page-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); gap: 24px; align-items: start; }
+.page-layout > * { min-width: 0; }
+.stack > .dashboard-card:last-child { margin-bottom: 0; }
+.page-form { margin-top: 0; }
+.page-form input, .page-form select { font-size: 14px; }
+select { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--surface); color: var(--ink); font: inherit; }
+.inline-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.date-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+.date-tab { flex: 1; min-width: 80px; border: 1px solid var(--line); border-radius: 9px; padding: 12px; background: var(--surface); color: var(--muted); font: inherit; font-size: 12px; }
+.date-tab[aria-pressed="true"] { background: #eaf1e3; border-color: #63846b; color: var(--green); font-weight: 600; }
+.booking-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.slot-choice { display: block; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 10px; padding: 18px; background: var(--surface); color: var(--ink); }
+.slot-choice[aria-pressed="true"] { border-color: var(--green); box-shadow: 0 0 0 2px #204f411c; background: #f4f7ef; }
+.slot-choice:disabled { opacity: .6; cursor: not-allowed; }
+.check-label { display: flex; align-items: center; gap: 10px; font-size: 13px; line-height: 1.7; }
+.check-label input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--green); }
+.booking-summary { margin: 0; }
+.booking-summary > div { padding: 15px 0; border-bottom: 1px solid var(--line); }
+.booking-summary dt { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.booking-summary dd { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.soft-note { background: #f0f3e9; padding: 14px 16px; border-radius: 9px; color: #52644b; font-size: 12px; line-height: 1.9; }
+.button-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
+.button-row .primary-button { width: auto; margin: 0; text-decoration: none; }
+.button-row a { font-size: 12px; }
+.danger-button { border: 1px solid #dfc9c1; color: #973f35; background: var(--surface); border-radius: 8px; padding: 10px 15px; font-size: 12px; font-weight: 600; }
+.danger-button:disabled { opacity: .5; cursor: not-allowed; }
+.filter-row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; }
+.filter-row > div { flex: 1; min-width: 140px; }
+.filter-row input { height: 46px; }
+.appointment-list { display: grid; gap: 18px; }
+.appointment-card { border: 1px solid var(--line); border-radius: 12px; padding: 22px; }
+.appointment-card h3 { font-size: 17px; margin: 16px 0 9px; }
+.appointment-card > p { color: var(--muted); font-size: 12px; line-height: 1.8; }
+.appointment-card .pickup-facts { margin: 18px 0; }
+.authorization-code { width: 100%; font-size: 26px !important; font-weight: 600; letter-spacing: 4px; text-align: center; background: #f5f7ef; color: var(--green); height: 64px; margin: 16px 0; }
+.countdown { font-size: 24px; color: var(--green); margin: 10px 0; font-variant-numeric: tabular-nums; }
+.authorization-list { list-style: none; padding: 0; margin: 0; }
+.authorization-list li { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; border-top: 1px solid var(--line); padding: 14px 0; font-size: 12px; line-height: 1.8; }
+.search-form { display: flex; gap: 14px; align-items: flex-end; margin: 0 0 24px; }
+.search-form .form-field { flex: 1; margin: 0; }
+.search-form .primary-button { width: auto; margin: 0; min-height: 50px; }
+.admin-table input { min-width: 70px; width: 85px; height: 40px; padding: 8px; }
+.admin-table select { min-width: 118px; min-height: 40px; font-size: 12px; }
+.admin-table button { white-space: nowrap; }
+.admin-table { min-width: 640px; }
+.admin-table caption { text-align: left; font-size: 12px; padding-bottom: 15px; color: var(--muted); }
+.table-hint { display: none; color: var(--muted); font-size: 11px; }
+.status-badge[data-status="ACTIVE"] { background: #eaf1e3; }
+.status-badge[data-status="RESERVED"] { background: #eeeeda; color: #6d6639; }
+.status-badge[data-status="REVOKED"], .status-badge[data-status="EXPIRED"] { background: #f0f1ed; color: #72796e; }
+.status-badge[data-status="USED"] { background: #e9f0ee; color: #386257; }
+
+/* 原生确认框：系统处理焦点、Esc 和背景不可交互，避免误触写操作。 */
+.confirm-dialog { border: 1px solid var(--line); border-radius: 18px; padding: 28px; width: min(440px, calc(100vw - 32px)); color: var(--ink); }
+.confirm-dialog::backdrop { background: #142e2580; }
+.confirm-dialog h2 { margin: 0 0 14px; font-size: 21px; }
+.confirm-dialog p { font-size: 13px; line-height: 1.9; color: var(--muted); overflow-wrap: anywhere; }
+.confirm-dialog form { margin: 20px 0 0; display: flex; justify-content: flex-end; gap: 12px; }
+@media (max-width: 1000px) { .dashboard-nav { order: 3; width: 100%; } }
+@media (max-width: 760px) {
+  .table-hint { display: block; }
+  .page-layout { grid-template-columns: 1fr; }
+  .page-heading .dashboard-tools { float: none; margin-bottom: 20px; align-items: flex-start; }
+  .booking-slots { grid-template-columns: 1fr; }
+  .inline-fields { grid-template-columns: 1fr; gap: 0; }
+  .search-form { flex-wrap: wrap; }
+  .search-form .form-field { min-width: 180px; }
+  .page-form input, .page-form select { font-size: 16px; }
+  .appointment-card { padding: 18px; }
+  .authorization-code { font-size: 22px !important; letter-spacing: 2px; }
+  .page-heading h1 { overflow-wrap: anywhere; }
+}

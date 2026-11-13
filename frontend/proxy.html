@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ExpressBook · Pickup help">
+    <title>
+      Pickup help · ExpressBook
+    </title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="icon" href="data:,">
+    <!-- 配置、真实接口、预览数据、公共交互先加载，最后运行本页逻辑。 -->
+    <script src="js/config.js" defer>
+    </script>
+    <script src="js/api.js" defer>
+    </script>
+    <script src="js/demo.js" defer>
+    </script>
+    <script src="js/app.js" defer>
+    </script>
+    <script src="js/proxy.js" defer>
+    </script>
+  </head>
+  <body data-page="proxy">
+    <a class="skip-link" href="#main-content">
+      Skip to content
+    </a>
+    <header class="site-header dashboard-header">
+      <a class="brand" href="dashboard.html" aria-label="ExpressBook overview">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/>
+            <path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/>
+          </svg>
+        </span>
+        <span>
+          ExpressBook
+          <span class="brand-english">
+            CAMPUS PARCEL
+          </span>
+        </span>
+      </a>
+      <!-- 全页导航只指向已实现的页面；角色链接不代替服务端权限校验。 -->
+      <nav class="dashboard-nav" aria-label="Main navigation">
+        <a href="dashboard.html">
+          Overview
+        </a>
+        <a href="booking.html">
+          Book pickup
+        </a>
+        <a href="appointments.html">
+          My pickups
+        </a>
+        <a href="proxy.html" aria-current="page">
+          Pickup help
+        </a>
+        <a href="history.html">
+          History
+        </a>
+        <a href="staff.html" data-role-link="STAFF,ADMIN" hidden>
+          Pickup desk
+        </a>
+        <a href="admin.html" data-role-link="ADMIN" hidden>
+          Manage slots
+        </a>
+      </nav>
+      <div class="user-menu">
+        <span id="user-id" class="user-id">
+          Checking session…
+        </span>
+        <button id="logout-button" class="text-button" type="button" disabled>
+          Sign out ↗
+        </button>
+        <a id="preview-signin" class="text-button" href="login.html" hidden>
+          Sign in ↗
+        </a>
+      </div>
+    </header>
+    <main id="main-content" class="dashboard-main">
+      <!-- 验证会话和角色之前隐藏页面数据，失败后提供重试和返回登录入口。 -->
+      <section id="page-gate" class="dashboard-gate" aria-labelledby="gate-title" aria-busy="true">
+        <h1 id="gate-title">
+          Getting things ready…
+        </h1>
+        <p id="gate-message" role="status" aria-live="polite">
+          Checking your session.
+        </p>
+        <button id="retry-button" class="secondary-button" type="button" hidden>
+          Try again
+        </button>
+        <a id="gate-signin" class="text-button" href="login.html" hidden>
+          Back to sign in →
+        </a>
+      </section>
+      <div id="page-content" hidden>
+        <p id="preview-notice" class="preview-notice" role="status" hidden>
+          Preview · Sample data. Changes reset when you leave or reload this page.
+        </p>
+        <div class="page-heading">
+          <div class="dashboard-tools">
+            <button id="refresh-button" class="secondary-button" type="button">
+              Refresh ↻
+            </button>
+          </div>
+          <span class="section-label">
+            YOUR EXPRESSBOOK
+          </span>
+          <h1>
+            Pickup help
+          </h1>
+          <p>
+            Let a friend collect for you, or use a friend’s invitation when booking your own pickup.
+          </p>
+        </div>
+        <p id="page-message" class="form-message" role="status" aria-live="polite" tabindex="-1" hidden>
+        </p>
+        <div class="page-layout">
+          <section class="dashboard-card" aria-labelledby="invitation-heading">
+            <div class="card-heading">
+              <h2 id="invitation-heading">
+                Ask a friend to collect
+              </h2>
+              <span class="small-label">
+                ONE PERSON · ONE CODE
+              </span>
+            </div>
+            <p class="soft-note">
+              Share an invitation with the friend who will collect for you. They add it when booking their own pickup, using 2 spaces in total.
+            </p>
+            <p id="authorization-state" class="state-message" role="status">
+            </p>
+            <button id="generate-button" class="primary-button" type="button">
+              Generate invitation
+            </button>
+            <div id="authorization-details" hidden>
+              <div id="authorization-status">
+              </div>
+              <label for="current-code">
+                Your invitation code
+              </label>
+              <input id="current-code" class="authorization-code" type="text" readonly autocomplete="off" spellcheck="false" aria-describedby="code-help">
+              <p id="code-help" class="field-hint">
+                Share this only with the friend collecting for you.
+              </p>
+              <p id="expires-label" class="field-hint">
+              </p>
+              <p id="countdown" class="countdown" aria-label="Time remaining to bind invitation">
+              </p>
+              <div class="button-row">
+                <button id="copy-button" class="secondary-button" type="button">
+                  Copy code
+                </button>
+                <button id="revoke-button" class="danger-button" type="button">
+                  Revoke invitation
+                </button>
+              </div>
+              <p id="authorization-note" class="field-hint">
+              </p>
+            </div>
+          </section>
+          <aside class="dashboard-card guide-card">
+            <span class="section-label">
+              A SMALL FAVOR. A BIG HELP.
+            </span>
+            <h2>
+              One less trip
+              <br>
+              for your friend.
+            </h2>
+            <ol class="pickup-guide">
+              <li>
+                They generate an invitation
+              </li>
+              <li>
+                You book a pickup for both of you
+              </li>
+              <li>
+                You collect at the parcel station
+              </li>
+            </ol>
+            <div class="button-row">
+              <a class="secondary-button" href="booking.html?helper=1">
+                Book with a friend’s code →
+              </a>
+            </div>
+            <p class="pickup-note">
+              At most one friend per booking. Invitations are valid for one hour before binding.
+            </p>
+          </aside>
+        </div>
+        <section class="dashboard-card" aria-labelledby="codes-heading">
+          <h2 id="codes-heading">
+            Invitation activity
+          </h2>
+          <p id="codes-state" class="state-message" role="status">
+          </p>
+          <ul id="authorization-list" class="authorization-list">
+          </ul>
+          <p class="section-footnote">
+            A reserved invitation belongs to an existing booking. Revocation is only available while an invitation is active and unbound.
+          </p>
+        </section>
+      </div>
+      <noscript>
+        <p class="noscript-note">
+          Enable JavaScript to use ExpressBook.
+          <a href="login.html">
+            Back to sign in
+          </a>
+        </p>
+      </noscript>
+    </main>
+    <!-- 写操作使用同一个原生确认框，默认焦点在取消按钮，避免误确认。 -->
+    <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+      <h2 id="confirm-title">
+        Confirm action
+      </h2>
+      <p id="confirm-text">
+      </p>
+      <form method="dialog">
+        <button id="confirm-cancel" class="secondary-button" value="cancel">
+          Keep as is
+        </button>
+        <button id="confirm-action" class="secondary-button" value="confirm">
+          Confirm
+        </button>
+      </form>
+    </dialog>
+    <footer class="site-footer dashboard-footer">
+      <span>
+        ExpressBook · Campus Parcel Pickup Booking
+      </span>
+      <span>
+        A little planning goes a long way.
+      </span>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your ExpressBook dashboard: keep track of campus parcel pickups and available time slots.">
+    <title>Dashboard · ExpressBook</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- 首页样式单独维护，避免影响已有登录和注册页。 -->
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="icon" href="data:,">
+    <script src="js/api.js" defer></script>
+    <script src="js/dashboard.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header dashboard-header">
+      <a class="brand" href="dashboard.html" aria-label="ExpressBook dashboard">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg>
+        </span>
+        <span>ExpressBook <span class="brand-english">CAMPUS PARCEL</span></span>
+      </a>
+      <!-- 学生功能统一导航；工作人员和管理入口由会话角色控制显示。 -->
+      <nav class="dashboard-nav" aria-label="Main navigation">
+        <a href="dashboard.html" aria-current="page">Overview</a>
+        <a href="booking.html">Book pickup</a>
+        <a href="appointments.html">My pickups</a>
+        <a href="proxy.html">Pickup help</a>
+        <a href="history.html">History</a>
+        <a id="staff-nav" href="staff.html" hidden>Pickup desk</a>
+        <a id="admin-nav" href="admin.html" hidden>Manage slots</a>
+      </nav>
+      <div class="user-menu">
+        <span id="user-id" class="user-id">Checking session…</span>
+        <button id="logout-button" class="text-button" type="button" disabled>Sign out <span aria-hidden="true">↗</span></button>
+        <a id="preview-signin" class="text-button" href="login.html" hidden>Sign in <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main id="main-content" class="dashboard-main">
+      <!-- 默认隐藏私人数据，只有会话验证成功后才展示内容。 -->
+      <section id="dashboard-gate" class="dashboard-gate" aria-labelledby="gate-title" aria-busy="true">
+        <span class="section-label">YOUR EXPRESSBOOK</span>
+        <h1 id="gate-title">Getting things ready…</h1>
+        <p id="gate-message" role="status" aria-live="polite">Checking your session and loading your pickups.</p>
+        <button id="retry-button" class="secondary-button" type="button" hidden>Try again</button>
+        <a id="gate-signin" class="text-button" href="login.html" hidden>Back to sign in →</a>
+      </section>
+
+      <div id="dashboard-content" hidden>
+        <!-- 仅直接打开本地文件时显示示例，HTTP 环境始终使用真实接口。 -->
+        <p id="preview-notice" class="preview-notice" role="status" hidden>Preview · Sample data. No bookings or account changes are made here.</p>
+        <div class="dashboard-heading">
+          <div>
+            <span class="section-label">YOUR DAY, A LITTLE MORE ORGANIZED</span>
+            <h1 id="welcome-title">Welcome back.</h1>
+            <p>A little planning. A smoother pickup.</p>
+          </div>
+          <div class="dashboard-tools">
+            <time id="today-label"></time>
+            <button id="refresh-button" class="secondary-button" type="button">Refresh <span aria-hidden="true">↻</span></button>
+          </div>
+        </div>
+        <p id="dashboard-message" class="form-message" role="status" aria-live="polite" tabindex="-1" hidden></p>
+
+        <!-- 统计值由预约及当日时段接口计算；加载/失败时显示横线而不是错误的零。 -->
+        <section class="summary-grid" aria-label="Pickup summary">
+          <article class="summary-card"><span class="summary-number" id="active-count">—</span><h2>Active pickup</h2><p>Your booked appointments</p></article>
+          <article class="summary-card"><span class="summary-number" id="completed-count">—</span><h2>Completed pickups</h2><p>Collected and confirmed</p></article>
+          <article class="summary-card"><span class="summary-number" id="remaining-count">—</span><h2>Spaces available today</h2><p>Across upcoming open slots</p></article>
+        </section>
+
+        <div class="dashboard-grid">
+          <section class="dashboard-card pickup-card" aria-labelledby="pickup-heading">
+            <div class="card-heading"><h2 id="pickup-heading">Your next pickup</h2><span class="small-label">01 / PLAN</span></div>
+            <p id="pickup-state" class="state-message" role="status">Loading your appointment…</p>
+            <div id="pickup-details" hidden>
+              <div class="pickup-topline"><span id="pickup-reference" class="pickup-reference"></span><span class="status-badge" data-status="BOOKED">Booked</span></div>
+              <h3 id="pickup-date" class="pickup-date"></h3>
+              <p id="pickup-time" class="pickup-time"></p>
+              <dl class="pickup-facts">
+                <div><dt>Pickup type</dt><dd id="pickup-type"></dd></div>
+                <div><dt>Spaces reserved</dt><dd id="pickup-capacity"></dd></div>
+              </dl>
+              <p class="pickup-note">Keep your booking reference ready when you collect your parcel.</p>
+            </div>
+            <a class="card-link" href="appointments.html">View my pickups <span aria-hidden="true">→</span></a>
+          </section>
+
+          <aside class="dashboard-card guide-card" aria-labelledby="guide-heading">
+            <span class="section-label">LESS WAITING. MORE LIVING.</span>
+            <h2 id="guide-heading">Make room for<br>the rest of your day.</h2>
+            <p>Find a time that fits your schedule and keep your campus day moving.</p>
+            <ol class="pickup-guide"><li>Choose a pickup slot</li><li>Keep your booking reference</li><li>Collect at the parcel station</li></ol>
+            <span class="guide-mark" aria-hidden="true">↗</span>
+          </aside>
+        </div>
+
+        <section id="availability" class="dashboard-card" aria-labelledby="availability-heading">
+          <div class="card-heading"><div><h2 id="availability-heading">Today's availability</h2><p class="card-subtitle">Upcoming slots · Times shown in UTC+08:00</p></div><span class="small-label">02 / FIND A TIME</span></div>
+          <p id="slots-state" class="state-message" role="status">Loading available slots…</p>
+          <ul id="slots-list" class="slots-list" aria-label="Today's pickup slots"></ul>
+          <p class="section-footnote">Availability can change. Your space is reserved only when a booking is confirmed.</p>
+        </section>
+
+        <section id="my-pickups" class="dashboard-card" aria-labelledby="activity-heading">
+          <div class="card-heading"><h2 id="activity-heading">Recent pickups</h2><span class="small-label">03 / KEEP TRACK</span></div>
+          <p id="activity-state" class="state-message" role="status">Loading recent pickups…</p>
+          <!-- 横向滚动仅限表格容器，手机端不撑宽整个页面。 -->
+          <div id="activity-table-wrap" class="table-scroll" hidden>
+            <table class="activity-table"><caption class="visually-hidden">Your five most recent pickup appointments</caption><thead><tr><th scope="col">Reference</th><th scope="col">Pickup time</th><th scope="col">Type</th><th scope="col">Status</th></tr></thead><tbody id="activity-body"></tbody></table>
+          </div>
+        </section>
+
+        <section class="quick-actions" aria-label="More pickup options">
+          <!-- 所有功能入口均已接到真实页面，本地 file: 预览仍使用独立示例。 -->
+          <div class="action-card"><span class="action-icon" aria-hidden="true">＋</span><div><h2>Book a pickup</h2><p>Choose a slot for your next visit.</p></div><a class="text-button" href="booking.html">Choose a time →</a></div>
+          <div class="action-card"><span class="action-icon" aria-hidden="true">↗</span><div><h2>Help a friend</h2><p>Pick up for one friend with an invitation.</p></div><a class="text-button" href="proxy.html">Pickup help →</a></div>
+        </section>
+      </div>
+      <noscript><p class="noscript-note">Enable JavaScript to load your dashboard. <a href="login.html">Back to sign in</a></p></noscript>
+    </main>
+    <footer class="site-footer dashboard-footer"><span>ExpressBook · Campus Parcel Pickup Booking</span><span>A little planning goes a long way.</span></footer>
+  </body>
+</html>

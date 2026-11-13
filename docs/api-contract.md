@@ -1,5 +1,7 @@
 # API Contract v1.1
 
+Implementation status as of 2026-11-13: the P0 endpoints listed below are available locally, except cancellation (P1). The frontend's optional revoke/staff/admin extensions remain unimplemented. See `docs/frontend-integration.md` and `docs/requirements/decision-log.md` before treating suggested fields or date cutoffs as final.
+
 Base path: `/api`. JSON is used for requests and responses. Authentication uses an HttpOnly session cookie.
 
 ## MVP Endpoints

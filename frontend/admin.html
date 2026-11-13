@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ExpressBook · Slot management">
+    <title>
+      Slot management · ExpressBook
+    </title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="icon" href="data:,">
+    <!-- 配置、真实接口、预览数据、公共交互先加载，最后运行本页逻辑。 -->
+    <script src="js/config.js" defer>
+    </script>
+    <script src="js/api.js" defer>
+    </script>
+    <script src="js/demo.js" defer>
+    </script>
+    <script src="js/app.js" defer>
+    </script>
+    <script src="js/admin.js" defer>
+    </script>
+  </head>
+  <body data-page="admin" data-roles="ADMIN">
+    <a class="skip-link" href="#main-content">
+      Skip to content
+    </a>
+    <header class="site-header dashboard-header">
+      <a class="brand" href="dashboard.html" aria-label="ExpressBook overview">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/>
+            <path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/>
+          </svg>
+        </span>
+        <span>
+          ExpressBook
+          <span class="brand-english">
+            CAMPUS PARCEL
+          </span>
+        </span>
+      </a>
+      <!-- 全页导航只指向已实现的页面；角色链接不代替服务端权限校验。 -->
+      <nav class="dashboard-nav" aria-label="Main navigation">
+        <a href="dashboard.html">
+          Overview
+        </a>
+        <a href="booking.html">
+          Book pickup
+        </a>
+        <a href="appointments.html">
+          My pickups
+        </a>
+        <a href="proxy.html">
+          Pickup help
+        </a>
+        <a href="history.html">
+          History
+        </a>
+        <a href="staff.html" data-role-link="STAFF,ADMIN" hidden>
+          Pickup desk
+        </a>
+        <a href="admin.html" aria-current="page" data-role-link="ADMIN" hidden>
+          Manage slots
+        </a>
+      </nav>
+      <div class="user-menu">
+        <span id="user-id" class="user-id">
+          Checking session…
+        </span>
+        <button id="logout-button" class="text-button" type="button" disabled>
+          Sign out ↗
+        </button>
+        <a id="preview-signin" class="text-button" href="login.html" hidden>
+          Sign in ↗
+        </a>
+      </div>
+    </header>
+    <main id="main-content" class="dashboard-main">
+      <!-- 验证会话和角色之前隐藏页面数据，失败后提供重试和返回登录入口。 -->
+      <section id="page-gate" class="dashboard-gate" aria-labelledby="gate-title" aria-busy="true">
+        <h1 id="gate-title">
+          Getting things ready…
+        </h1>
+        <p id="gate-message" role="status" aria-live="polite">
+          Checking your session.
+        </p>
+        <button id="retry-button" class="secondary-button" type="button" hidden>
+          Try again
+        </button>
+        <a id="gate-signin" class="text-button" href="login.html" hidden>
+          Back to sign in →
+        </a>
+      </section>
+      <div id="page-content" hidden>
+        <p id="preview-notice" class="preview-notice" role="status" hidden>
+          Preview · Sample data. Changes reset when you leave or reload this page.
+        </p>
+        <div class="page-heading">
+          <div class="dashboard-tools">
+            <button id="refresh-button" class="secondary-button" type="button">
+              Refresh ↻
+            </button>
+          </div>
+          <span class="section-label">
+            YOUR EXPRESSBOOK
+          </span>
+          <h1>
+            Slot management
+          </h1>
+          <p>
+            Manage pickup capacity and availability while preserving existing bookings.
+          </p>
+        </div>
+        <p id="page-message" class="form-message" role="status" aria-live="polite" tabindex="-1" hidden>
+        </p>
+        <section class="dashboard-card" aria-labelledby="manage-heading">
+          <div class="card-heading">
+            <h2 id="manage-heading">
+              Manage a day
+            </h2>
+            <span class="small-label">
+              UTC+08:00
+            </span>
+          </div>
+          <label for="admin-date">
+            Slot date
+          </label>
+          <input id="admin-date" type="date" required aria-describedby="admin-date-error">
+          <p id="admin-date-error" class="field-error" hidden>
+          </p>
+          <p id="admin-state" class="state-message" role="status">
+          </p>
+          <p class="table-hint">
+            Swipe across the table to view all slot controls →
+          </p>
+          <div id="admin-table-wrap" class="table-scroll" hidden>
+            <table class="activity-table admin-table">
+              <caption>
+                Changes apply only when you select Save. Occupied spaces cannot be removed.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">
+                    Time
+                  </th>
+                  <th scope="col">
+                    Occupied
+                  </th>
+                  <th scope="col">
+                    Capacity
+                  </th>
+                  <th scope="col">
+                    Availability
+                  </th>
+                  <th scope="col">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="admin-body">
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section class="dashboard-card" aria-labelledby="create-heading">
+          <h2 id="create-heading">
+            Create a one-hour slot
+          </h2>
+          <form id="create-slot-form" class="page-form" novalidate>
+            <div class="inline-fields">
+              <div class="form-field">
+                <label for="new-slot-time">
+                  Start time
+                </label>
+                <input id="new-slot-time" type="time" step="60" required aria-describedby="new-slot-time-error">
+                <p id="new-slot-time-error" class="field-error" hidden>
+                </p>
+              </div>
+              <div class="form-field">
+                <label for="new-capacity">
+                  Capacity
+                </label>
+                <input id="new-capacity" type="number" value="60" min="1" max="60" step="1" required aria-describedby="new-capacity-error">
+                <p id="new-capacity-error" class="field-error" hidden>
+                </p>
+              </div>
+            </div>
+            <div class="inline-fields">
+              <div class="form-field">
+                <label for="new-slot-status">
+                  Availability
+                </label>
+                <select id="new-slot-status">
+                  <option value="AVAILABLE">
+                    Open
+                  </option>
+                  <option value="CLOSED">
+                    Closed
+                  </option>
+                </select>
+              </div>
+              <div class="form-field">
+                <p id="new-slot-end" class="soft-note">
+                  Choose a start time. Each slot lasts one hour.
+                </p>
+              </div>
+            </div>
+            <button id="create-slot-button" class="primary-button" type="submit">
+              Create slot →
+            </button>
+          </form>
+        </section>
+      </div>
+      <noscript>
+        <p class="noscript-note">
+          Enable JavaScript to use ExpressBook.
+          <a href="login.html">
+            Back to sign in
+          </a>
+        </p>
+      </noscript>
+    </main>
+    <!-- 写操作使用同一个原生确认框，默认焦点在取消按钮，避免误确认。 -->
+    <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+      <h2 id="confirm-title">
+        Confirm action
+      </h2>
+      <p id="confirm-text">
+      </p>
+      <form method="dialog">
+        <button id="confirm-cancel" class="secondary-button" value="cancel">
+          Keep as is
+        </button>
+        <button id="confirm-action" class="secondary-button" value="confirm">
+          Confirm
+        </button>
+      </form>
+    </dialog>
+    <footer class="site-footer dashboard-footer">
+      <span>
+        ExpressBook · Campus Parcel Pickup Booking
+      </span>
+      <span>
+        A little planning goes a long way.
+      </span>
+    </footer>
+  </body>
+</html>
