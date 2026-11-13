@@ -28,11 +28,11 @@
     INVALID_RESPONSE: "Unexpected response from the sign-in service. Please try again later.",
     TOO_MANY_REQUESTS: "Too many requests. Please try again later.",
   };
-  // 注册提示单独定义，页面保持英文；具体学号白名单、密码规则由后端校验。
+  // 注册提示单独定义，页面保持英文；后端负责确认学号是否在白名单内。
   if (isRegister) {
     Object.assign(errorMessages, {
       ALREADY_REGISTERED: "This student ID is already registered. Sign in to your account.",
-      INVALID_INPUT: "Check your test student ID and password against the registration requirements provided by your team.",
+      INVALID_INPUT: "Registration was rejected. Check that you are using a test student ID assigned by your team.",
       NETWORK_ERROR: "Cannot connect to the registration service. Check your connection or try again later.",
       REQUEST_TIMEOUT: "Registration request timed out. Please try again later.",
       SERVICE_UNAVAILABLE: "The registration service is temporarily unavailable. Please try again later.",
@@ -104,10 +104,24 @@
     if (successLink) successLink.hidden = true;
 
     const studentId = studentIdInput.value.trim();
-    // 密码按原样发送，不擅自去掉空格或添加尚未确定的密码规则。
+    // 密码按原样发送，注册页按当前后端规则校验格式。
     const password = passwordInput.value;
-    setFieldError(studentIdInput, studentId ? "" : "Enter your test student ID.");
-    setFieldError(passwordInput, password ? "" : "Enter your password.");
+    let studentIdError = studentId ? "" : "Enter your test student ID.";
+    let passwordError = password ? "" : "Enter your password.";
+    if (isRegister) {
+      if (studentId && !/^STU\d{4}$/.test(studentId)) {
+        studentIdError = "Enter uppercase STU followed by four digits, such as STU0001.";
+      }
+      if (password) {
+        if (password.length < 8 || password.length > 128) {
+          passwordError = "Use 8–128 characters.";
+        } else if (!/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+          passwordError = "Include at least one digit and one symbol, such as !.";
+        }
+      }
+    }
+    setFieldError(studentIdInput, studentIdError);
+    setFieldError(passwordInput, passwordError);
     let confirmError = "";
     if (isRegister) {
       confirmError = !confirmPasswordInput.value
@@ -116,9 +130,9 @@
       setFieldError(confirmPasswordInput, confirmError);
     }
 
-    if (!studentId || !password || confirmError) {
-      // 优先把焦点移到第一个未填写的字段。
-      (!studentId ? studentIdInput : !password ? passwordInput : confirmPasswordInput).focus();
+    if (studentIdError || passwordError || confirmError) {
+      // 优先把焦点移到第一个有错误的字段。
+      (studentIdError ? studentIdInput : passwordError ? passwordInput : confirmPasswordInput).focus();
       return;
     }
 
