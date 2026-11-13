@@ -1,267 +1,176 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ExpressBook · Book a pickup">
-    <title>
-      Book a pickup · ExpressBook
-    </title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="css/pages.css">
-    <link rel="icon" href="data:,">
-    <!-- 配置、真实接口、预览数据、公共交互先加载，最后运行本页逻辑。 -->
-    <script src="js/config.js" defer>
-    </script>
-    <script src="js/api.js" defer>
-    </script>
-    <script src="js/demo.js" defer>
-    </script>
-    <script src="js/app.js" defer>
-    </script>
-    <script src="js/booking.js" defer>
-    </script>
-  </head>
-  <body data-page="booking">
-    <a class="skip-link" href="#main-content">
-      Skip to content
-    </a>
-    <header class="site-header dashboard-header">
-      <a class="brand" href="dashboard.html" aria-label="ExpressBook overview">
-        <span class="brand-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/>
-            <path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/>
-          </svg>
-        </span>
-        <span>
-          ExpressBook
-          <span class="brand-english">
-            CAMPUS PARCEL
-          </span>
-        </span>
-      </a>
-      <!-- 全页导航只指向已实现的页面；角色链接不代替服务端权限校验。 -->
-      <nav class="dashboard-nav" aria-label="Main navigation">
-        <a href="dashboard.html">
-          Overview
-        </a>
-        <a href="booking.html" aria-current="page">
-          Book pickup
-        </a>
-        <a href="appointments.html">
-          My pickups
-        </a>
-        <a href="proxy.html">
-          Pickup help
-        </a>
-        <a href="history.html">
-          History
-        </a>
-        <a href="staff.html" data-role-link="STAFF,ADMIN" hidden>
-          Pickup desk
-        </a>
-        <a href="admin.html" data-role-link="ADMIN" hidden>
-          Manage slots
-        </a>
-      </nav>
-      <div class="user-menu">
-        <span id="user-id" class="user-id">
-          Checking session…
-        </span>
-        <button id="logout-button" class="text-button" type="button" disabled>
-          Sign out ↗
-        </button>
-        <a id="preview-signin" class="text-button" href="login.html" hidden>
-          Sign in ↗
-        </a>
-      </div>
-    </header>
-    <main id="main-content" class="dashboard-main">
-      <!-- 验证会话和角色之前隐藏页面数据，失败后提供重试和返回登录入口。 -->
-      <section id="page-gate" class="dashboard-gate" aria-labelledby="gate-title" aria-busy="true">
-        <h1 id="gate-title">
-          Getting things ready…
-        </h1>
-        <p id="gate-message" role="status" aria-live="polite">
-          Checking your session.
-        </p>
-        <button id="retry-button" class="secondary-button" type="button" hidden>
-          Try again
-        </button>
-        <a id="gate-signin" class="text-button" href="login.html" hidden>
-          Back to sign in →
-        </a>
-      </section>
-      <div id="page-content" hidden>
-        <p id="preview-notice" class="preview-notice" role="status" hidden>
-          Preview · Sample data. Changes reset when you leave or reload this page.
-        </p>
-        <div class="page-heading">
-          <div class="dashboard-tools">
-            <button id="refresh-button" class="secondary-button" type="button">
-              Refresh ↻
-            </button>
-          </div>
-          <span class="section-label">
-            YOUR EXPRESSBOOK
-          </span>
-          <h1>
-            Book a pickup
-          </h1>
-          <p>
-            Find a time that fits your day. Reserve for yourself, or bring one friend’s invitation.
-          </p>
-        </div>
-        <p id="page-message" class="form-message" role="status" aria-live="polite" tabindex="-1" hidden>
-        </p>
-        <section id="booking-success" class="dashboard-card" hidden aria-labelledby="success-title">
-          <span class="section-label">
-            ALL SET
-          </span>
-          <h2 id="success-title">
-            Your pickup is booked.
-          </h2>
-          <p id="booking-result">
-          </p>
-          <div class="button-row">
-            <a class="primary-button" href="appointments.html">
-              View my pickups →
-            </a>
-            <a href="dashboard.html">
-              Back to overview
-            </a>
-          </div>
-        </section>
-        <form id="booking-form" class="page-form" novalidate>
-          <div class="page-layout">
-            <div class="stack">
-              <!-- 时段范围来自 config.js；服务端仍拥有最终可预约性判断权。 -->
-              <section class="dashboard-card" aria-labelledby="date-heading">
-                <div class="card-heading">
-                  <h2 id="date-heading">
-                    01 / Choose a date
-                  </h2>
-                  <span class="small-label">
-                    UTC+08:00
-                  </span>
-                </div>
-                <label for="booking-date">
-                  Pickup date
-                </label>
-                <input id="booking-date" type="date" required aria-describedby="booking-date-error">
-                <p id="booking-date-error" class="field-error" hidden>
-                </p>
-                <div id="date-tabs" class="date-tabs" role="group" aria-label="Available dates">
-                </div>
-                <p id="slots-state" class="state-message" role="status">
-                  Loading slots…
-                </p>
-                <div id="booking-slots" class="slots-list booking-slots" role="group" aria-label="Choose a pickup slot">
-                </div>
-              </section>
-              <section class="dashboard-card" aria-labelledby="type-heading">
-                <h2 id="type-heading">
-                  02 / Who are you collecting for?
-                </h2>
-                <label class="check-label" for="proxy-toggle">
-                  <input id="proxy-toggle" type="checkbox" aria-controls="invitation-field">
-                  Collect for one friend as well
-                </label>
-                <p id="capacity-note" class="soft-note">
-                  Your pickup uses 1 space.
-                </p>
-                <div id="invitation-field" class="form-field" hidden>
-                  <label for="invitation-code">
-                    Your friend’s invitation code
-                  </label>
-                  <input id="invitation-code" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. K7M9Q2R4" aria-describedby="invitation-hint invitation-code-error">
-                  <p id="invitation-hint" class="field-hint">
-                    Ask your friend to generate a code in Pickup help. A code must be bound within one hour of issue.
-                  </p>
-                  <p id="invitation-code-error" class="field-error" hidden>
-                  </p>
-                </div>
-              </section>
-            </div>
-            <aside class="dashboard-card" aria-labelledby="summary-heading">
-              <h2 id="summary-heading">
-                Your pickup plan
-              </h2>
-              <dl class="booking-summary">
-                <div>
-                  <dt>
-                    Date
-                  </dt>
-                  <dd id="summary-date">
-                    Choose a date
-                  </dd>
-                </div>
-                <div>
-                  <dt>
-                    Time
-                  </dt>
-                  <dd id="summary-time">
-                    Choose a slot
-                  </dd>
-                </div>
-                <div>
-                  <dt>
-                    Spaces needed
-                  </dt>
-                  <dd id="summary-units">
-                    1
-                  </dd>
-                </div>
-              </dl>
-              <p id="booking-state" class="state-message" role="status">
-              </p>
-              <button id="book-button" class="primary-button" type="submit" disabled>
-                Confirm booking →
-              </button>
-              <p class="section-footnote">
-                One active booking per student. Availability is confirmed when you book.
-              </p>
-              <a class="card-link" href="appointments.html">
-                Check my pickups →
-              </a>
-            </aside>
-          </div>
-        </form>
-      </div>
-      <noscript>
-        <p class="noscript-note">
-          Enable JavaScript to use ExpressBook.
-          <a href="login.html">
-            Back to sign in
-          </a>
-        </p>
-      </noscript>
-    </main>
-    <!-- 写操作使用同一个原生确认框，默认焦点在取消按钮，避免误确认。 -->
-    <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
-      <h2 id="confirm-title">
-        Confirm action
-      </h2>
-      <p id="confirm-text">
-      </p>
-      <form method="dialog">
-        <button id="confirm-cancel" class="secondary-button" value="cancel">
-          Keep as is
-        </button>
-        <button id="confirm-action" class="secondary-button" value="confirm">
-          Confirm
-        </button>
-      </form>
-    </dialog>
-    <footer class="site-footer dashboard-footer">
-      <span>
-        ExpressBook · Campus Parcel Pickup Booking
-      </span>
-      <span>
-        A little planning goes a long way.
-      </span>
-    </footer>
-  </body>
-</html>
+/*
+ * 登录与注册页面交互层：读取输入 → 校验 → 调用接口 → 显示结果。
+ * 不把密码、用户或登录状态写进 localStorage/sessionStorage。
+ */
+(() => {
+  // 1. 找到 HTML 里带对应 id 的元素。
+  // 注册页通过 data-mode 区分；两页共用字段 id，避免复制交互逻辑。
+  const form = document.querySelector("#login-form, #register-form");
+  const isRegister = form.dataset.mode === "register";
+  const studentIdInput = document.querySelector("#student-id");
+  const passwordInput = document.querySelector("#password");
+  const confirmPasswordInput = document.querySelector("#confirm-password");
+  const toggleButton = document.querySelector("#toggle-password");
+  const submitButton = document.querySelector("#login-button");
+  const buttonLabel = document.querySelector("#login-button-label");
+  const message = document.querySelector("#form-message");
+  const successLink = document.querySelector("#registration-success-link");
+  const fields = [studentIdInput, passwordInput, confirmPasswordInput].filter(Boolean);
+  let isSubmitting = false;
+
+  // 将接口错误码映射为英文提示，避免直接展示后端内部错误。
+  const errorMessages = {
+    INVALID_CREDENTIALS: "Incorrect student ID or password. Please try again.",
+    INVALID_INPUT: "Check your student ID and password and try again.",
+    NETWORK_ERROR: "Cannot connect to the sign-in service. Check your connection or try again later.",
+    REQUEST_TIMEOUT: "Sign-in request timed out. Please try again later.",
+    SERVICE_UNAVAILABLE: "The sign-in service is temporarily unavailable. Please try again later.",
+    INVALID_RESPONSE: "Unexpected response from the sign-in service. Please try again later.",
+    TOO_MANY_REQUESTS: "Too many requests. Please try again later.",
+  };
+  // 注册提示单独定义，页面保持英文；后端负责确认学号是否在白名单内。
+  if (isRegister) {
+    Object.assign(errorMessages, {
+      ALREADY_REGISTERED: "This student ID is already registered. Sign in to your account.",
+      INVALID_INPUT: "Registration was rejected. Check that you are using a test student ID assigned by your team.",
+      NETWORK_ERROR: "Cannot connect to the registration service. Check your connection or try again later.",
+      REQUEST_TIMEOUT: "Registration request timed out. Please try again later.",
+      SERVICE_UNAVAILABLE: "The registration service is temporarily unavailable. Please try again later.",
+      INVALID_RESPONSE: "Unexpected response from the registration service. Please try again later.",
+    });
+  }
+
+  // 输入框与提示元素通过“输入框 id + -error”关联；空文字表示清除错误。
+  function setFieldError(input, text) {
+    const errorElement = document.querySelector(`#${input.id}-error`);
+    errorElement.textContent = text;
+    errorElement.hidden = !text;
+    input.setAttribute("aria-invalid", String(Boolean(text)));
+  }
+
+  // data-type 决定提示配色；主动聚焦让键盘用户也能及时读到结果。
+  function showMessage(text, type = "info") {
+    message.textContent = text;
+    message.dataset.type = type;
+    message.hidden = false;
+    message.focus();
+  }
+
+  // 仅识别固定原因，不直接显示 URL 中的文字，也不接受任意跳转地址。
+  if (!isRegister) {
+    const reason = new URLSearchParams(window.location.search).get("reason");
+    if (reason === "session-expired") showMessage("Your session has expired. Please sign in again.");
+    if (reason === "signed-out") showMessage("You have been signed out successfully.");
+  }
+
+  // 请求期间禁用输入和按钮，配合 isSubmitting 防止重复提交。
+  function setLoading(loading) {
+    isSubmitting = loading;
+    submitButton.disabled = loading;
+    fields.forEach((input) => { input.disabled = loading; });
+    toggleButton.disabled = loading;
+    form.setAttribute("aria-busy", String(loading));
+    buttonLabel.textContent = isRegister
+      ? (loading ? "Creating account..." : "Create account")
+      : (loading ? "Signing in..." : "Sign in");
+  }
+
+  // 2. 监听“显示密码”按钮。type="button" 保证它不会提交表单。
+  toggleButton.addEventListener("click", () => {
+    const willShow = passwordInput.type === "password";
+    passwordInput.type = willShow ? "text" : "password";
+    if (confirmPasswordInput) confirmPasswordInput.type = passwordInput.type;
+    toggleButton.textContent = willShow ? "Hide" : "Show";
+    toggleButton.setAttribute("aria-label", willShow ? "Hide password" : "Show password");
+    toggleButton.setAttribute("aria-pressed", String(willShow));
+  });
+
+  // 用户重新输入时清除旧提示，下一次提交再检查最新内容。
+  fields.forEach((input) => {
+    input.addEventListener("input", () => {
+      setFieldError(input, "");
+      // 修改原密码后，旧的“不一致”提示也需要清除，提交时重新判断。
+      if (input === passwordInput && confirmPasswordInput) setFieldError(confirmPasswordInput, "");
+      message.hidden = true;
+      if (successLink) successLink.hidden = true;
+    });
+  });
+
+  // 3. 监听提交事件。按 Enter 和点击“登录”会走同一套逻辑。
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault(); // 防止浏览器默认提交让页面刷新。
+    if (isSubmitting) return;
+    message.hidden = true;
+    if (successLink) successLink.hidden = true;
+
+    const studentId = studentIdInput.value.trim();
+    // 密码按原样发送，注册页按当前后端规则校验格式。
+    const password = passwordInput.value;
+    let studentIdError = studentId ? "" : "Enter your test student ID.";
+    let passwordError = password ? "" : "Enter your password.";
+    if (isRegister) {
+      if (studentId && !/^STU\d{4}$/.test(studentId)) {
+        studentIdError = "Enter uppercase STU followed by four digits, such as STU0001.";
+      }
+      if (password) {
+        if (password.length < 8 || password.length > 128) {
+          passwordError = "Use 8–128 characters.";
+        } else if (!/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+          passwordError = "Include at least one digit and one symbol, such as !.";
+        }
+      }
+    }
+    setFieldError(studentIdInput, studentIdError);
+    setFieldError(passwordInput, passwordError);
+    let confirmError = "";
+    if (isRegister) {
+      confirmError = !confirmPasswordInput.value
+        ? "Confirm your password."
+        : (password !== confirmPasswordInput.value ? "Passwords do not match." : "");
+      setFieldError(confirmPasswordInput, confirmError);
+    }
+
+    if (studentIdError || passwordError || confirmError) {
+      // 优先把焦点移到第一个有错误的字段。
+      (studentIdError ? studentIdInput : passwordError ? passwordInput : confirmPasswordInput).focus();
+      return;
+    }
+
+    // 双击 HTML 能学习界面和交互；真实 Cookie 登录需要 HTTP 服务。
+    if (window.location.protocol === "file:") {
+      showMessage(isRegister
+        ? "Form validation passed. This is a local file preview; connect the registration service to create an account."
+        : "Form validation passed. This is a local file preview; connect the sign-in service to sign in.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = isRegister
+        ? await window.ParcelApi.register(studentId, password)
+        : await window.ParcelApi.login(studentId, password);
+      form.reset();
+      passwordInput.type = "password";
+      if (confirmPasswordInput) confirmPasswordInput.type = "password";
+      toggleButton.textContent = "Show";
+      toggleButton.setAttribute("aria-label", "Show password");
+      toggleButton.setAttribute("aria-pressed", "false");
+      // 注册成功不等于已登录；只在服务端确认创建后展示登录入口。
+      if (isRegister) {
+        showMessage("Account created successfully. Sign in to continue.", "success");
+        successLink.hidden = false;
+      } else {
+        // 后端确认登录成功后才进入首页，由首页再次检查 Session Cookie。
+        showMessage(`Signed in successfully. Welcome, ${user.studentId}.`, "success");
+        window.location.assign("dashboard.html");
+      }
+    } catch (error) {
+      showMessage(errorMessages[error.code] || (isRegister
+        ? "Unable to create an account right now. Please try again later."
+        : "Unable to sign in right now. Please try again later."), "error");
+    } finally {
+      // 无论登录成功还是请求失败，都恢复表单的可操作状态。
+      setLoading(false);
+    }
+  });
+})();
