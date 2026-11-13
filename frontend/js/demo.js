@@ -19,9 +19,9 @@ window.ExpressBookDemo = {
     const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     function randomInvitationCode() {
       if (!window.crypto?.getRandomValues) fail("SERVICE_UNAVAILABLE");
-      // 用浏览器安全随机源生成六位码，撤销过的码也不在当前页重复使用。
+      // 用浏览器安全随机源生成八位码，撤销过的码也不在当前页重复使用。
       for (let attempt = 0; attempt < 32; attempt++) {
-        const bytes = window.crypto.getRandomValues(new Uint8Array(6));
+        const bytes = window.crypto.getRandomValues(new Uint8Array(8));
         const code = Array.from(bytes, (value) => codeAlphabet[value % codeAlphabet.length]).join("");
         if (!issuedCodes.has(code)) { issuedCodes.add(code); return code; }
       }
