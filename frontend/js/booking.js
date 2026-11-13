@@ -64,9 +64,14 @@
     event.preventDefault();
     if (A.locked || submitting) return;
     if (!selected || !eligible(selected) || activeBooking || uncertain) { update(); return; }
-    const code = $("proxy-toggle").checked ? $("invitation-code").value.trim() : undefined;
+    const code = $("proxy-toggle").checked ? $("invitation-code").value.trim().toUpperCase() : undefined;
     A.fieldError("invitation-code", $("proxy-toggle").checked && !code ? "Enter your friend’s invitation code." : "");
     if ($("proxy-toggle").checked && !code) { $("invitation-code").focus(); return; }
+    if (code && !/^[A-HJ-NP-Z2-9]{8}$/.test(code)) {
+      A.fieldError("invitation-code", "Enter an 8-character code using A–Z or 2–9, without I or O.");
+      $("invitation-code").focus();
+      return;
+    }
     // 确认后重新检查时间与容量提示，真正并发占位仍由后端事务保证。
     if (!await A.confirm("Confirm your pickup?", `${A.date(selected.startAt)} · ${A.time(selected.startAt)} – ${A.time(selected.endAt)}. This booking uses ${units()} ${units() === 1 ? "space" : "spaces"}.`, "Book pickup")) return;
     if (!eligible(selected)) { update(); A.notify("This slot is no longer available. Refresh and choose another.", "error"); return; }
