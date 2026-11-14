@@ -67,4 +67,4 @@ role-logs/                六个 SA3 角色的负责人、交付物与每周更�
 
 ## 下一步
 
-后端先冻结公开 API 合同、ERD 与虚构 seed 数据，再实现注册/登录、时段查询和普通预约事务。执行顺序见 [后端开工计划](docs/backend-start-plan.md)；仍待小组确认的规则记录在 [最终需求基线摘要](docs/requirements/SRS-v1.1-baseline.md)，不得擅自编码为正式规则。
+本地工作分支已导入前端源码，并实现注册/登录、时段查询、普通及代取预约事务、邀请码签发与个人列表；运行和测试步骤见 [后端说明](backend/README.md)。取消、工作人员、违约与管理员流程仍待后续实现。未确认规则见 [决策记录](docs/requirements/decision-log.md)，不得擅自编码为正式验收条件。

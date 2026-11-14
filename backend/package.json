@@ -1,0 +1,27 @@
+{
+  "name": "campus-parcel-pickup-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0 <27"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:init": "node scripts/init-db.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^13.0.3",
+    "dotenv": "^16.6.1",
+    "express": "^5.3.0",
+    "express-session": "^1.19.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.2",
+    "vitest": "^5.1.0"
+  }
+}
