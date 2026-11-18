@@ -98,7 +98,7 @@ export function createApiRouter(db, config) {
       LEFT JOIN pickup_authorizations pa ON pa.id = h.authorization_id
       LEFT JOIN users u ON u.id = pa.issuer_user_id
       WHERE a.user_id = ? ORDER BY a.created_at DESC, a.id DESC`).all(request.user.id);
-    response.json({ appointments: rows.map(appointmentView) });
+    response.json({ appointments: rows.map((row) => appointmentView(row)) });
   });
 
   router.post('/appointments', requireStudent, (request, response) => {
@@ -109,6 +109,14 @@ export function createApiRouter(db, config) {
     }
     const appointment = booking.createAppointment(request.user.id, slotId, invitationCode);
     response.status(201).json({ appointment });
+  });
+
+  router.post('/appointments/:id/cancel', requireStudent, (request, response) => {
+    const appointmentId = Number(request.params.id);
+    if (!/^[1-9]\d*$/.test(request.params.id) || !Number.isSafeInteger(appointmentId)) {
+      throw new ApiError(400, 'INVALID_INPUT', 'Invalid appointment ID.');
+    }
+    response.json({ appointment: booking.cancelAppointment(request.user.id, appointmentId) });
   });
 
   router.get('/authorizations/me', requireStudent, (request, response) => {

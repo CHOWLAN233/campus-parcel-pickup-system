@@ -14,3 +14,15 @@ Owners: Developer A; Backend Developer
 | 2026-11-13 | Week 7 | Backend Developer | Uploaded the reviewed source to a separate branch and opened draft PR #2 | `feature/backend-foundation`, `https://github.com/CHOWLAN233/campus-parcel-pickup-system/pull/2` | Draft review open; `main` unchanged | Email and other pending rules remain in `DEC-01`–`DEC-06` | Keep incomplete P1 work explicit in the PR and wait for team review before merge | Confirm decisions and request reviewer feedback |  |
 
 The implementation entries follow the actual sequence. The 10 Nov baseline is supported by the repository history; backend code and integration were performed on 13 Nov. No completion is claimed for 11–12 Nov because no dated evidence was available. This avoids backdating contributions while preserving the requested starting date.
+
+## Backend follow-up, 2026-11-14 to 2026-11-18
+
+The middle three dates are an allocation for the requested reporting period. The cancellation implementation, documentation changes and verification were performed on 18 Nov.
+
+| Reporting date | Public member label | Work and linked ID | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| 2026-11-14 | Backend Developer | Backend foundation merged into main | PR #2, merge commit `4b9567d` | GitHub merge date |
+| 2026-11-15 | Backend Developer | Cancellation endpoint, session and ownership checks, and the inclusive 24-hour cutoff (FR-06) | `backend/src/routes/api.js`, `backend/src/services/booking.js` | Allocated entry; implemented 18 Nov |
+| 2026-11-16 | Backend Developer | Capacity release, invitation expiry and reuse, and successful cancellation audit event (FR-06, FR-14) | `backend/src/services/booking.js` | Allocated entry; implemented 18 Nov |
+| 2026-11-17 | Backend Developer | Frontend cancellation deadline and API integration notes (FR-06) | `frontend/js/appointments.js`, `docs/api-contract.md`, `docs/frontend-integration.md` | Allocated entry; implemented 18 Nov |
+| 2026-11-18 | Backend Developer | Verified cancellation ownership, cutoff, retry safety and invitation reuse; synchronized pending proposals DEC-01–DEC-09 | `backend/test/api.test.js`, `docs/requirements/decision-log.md`, `docs/requirements/SRS-v1.1-baseline.md` | 12 API tests passed; provisional rules ready for review |

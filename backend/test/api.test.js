@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { openDatabase } from '../src/db.js';
@@ -115,5 +115,65 @@ describe('FR-07/08/09 invitation and atomic capacity', () => {
     expect((await collector.post('/api/appointments').send({ slotId, invitationCode: secondCode })).status).toBe(201);
     expect((await third.post('/api/appointments').send({ slotId, invitationCode: secondCode })).body.code).toBe('INVITATION_USED');
     expect(db.prepare('SELECT occupied FROM pickup_slots WHERE id = ?').get(slotId).occupied).toBe(2);
+  });
+});
+
+describe('FR-06 cancellation', () => {
+  it('allows the owner at the exact cutoff and makes repeated requests safe', async () => {
+    const owner = await registerAndLogin('STU0001');
+    const other = await registerAndLogin('STU0002');
+    const cutoff = db.prepare('SELECT start_at FROM pickup_slots WHERE id = ?').get(slotId).start_at - 86400000;
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(cutoff);
+    try {
+      const { appointment } = (await owner.post('/api/appointments').send({ slotId })).body;
+      const path = `/api/appointments/${appointment.id}/cancel`;
+      expect(appointment.canCancel).toBe(true);
+      expect((await request(app).post(path)).status).toBe(401);
+      expect((await other.post(path)).status).toBe(404);
+      expect((await owner.post(path)).body.appointment).toMatchObject({ status: 'CANCELLED', canCancel: false });
+      expect((await owner.post(path)).status).toBe(200);
+      expect(db.prepare('SELECT occupied FROM pickup_slots WHERE id = ?').get(slotId).occupied).toBe(0);
+      expect(db.prepare("SELECT COUNT(*) AS n FROM audit_logs WHERE action = 'APPOINTMENT_CANCELLED'").get().n).toBe(1);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('rejects cancellation after the cutoff and retains the booking', async () => {
+    const owner = await registerAndLogin('STU0001');
+    const start = db.prepare('SELECT start_at FROM pickup_slots WHERE id = ?').get(slotId).start_at;
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(start - 86400000 + 1);
+    try {
+      const { appointment } = (await owner.post('/api/appointments').send({ slotId })).body;
+      expect(appointment.canCancel).toBe(false);
+      expect((await owner.post(`/api/appointments/${appointment.id}/cancel`)).body.code).toBe('CANCEL_NOT_ALLOWED');
+      expect((await owner.get('/api/appointments/me')).body.appointments[0].status).toBe('BOOKED');
+      expect(db.prepare('SELECT occupied FROM pickup_slots WHERE id = ?').get(slotId).occupied).toBe(1);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it.each([false, true])('releases two units and handles invitation expiration (%s)', async (expired) => {
+    const collector = await registerAndLogin('STU0001');
+    const issuer = await registerAndLogin('STU0002');
+    const start = db.prepare('SELECT start_at FROM pickup_slots WHERE id = ?').get(slotId).start_at;
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(start - 86400000 - 3600000);
+    try {
+      const issued = (await issuer.post('/api/authorizations')).body;
+      const payload = { slotId, invitationCode: issued.invitationCode };
+      const { appointment } = (await collector.post('/api/appointments').send(payload)).body;
+      if (expired) clock.mockReturnValue(Date.parse(issued.expiresAt));
+      expect((await collector.post(`/api/appointments/${appointment.id}/cancel`)).status).toBe(200);
+      expect(db.prepare('SELECT occupied FROM pickup_slots WHERE id = ?').get(slotId).occupied).toBe(0);
+      expect((await issuer.get('/api/authorizations/me')).body.authorizations[0]).toMatchObject({
+        status: expired ? 'EXPIRED' : 'ACTIVE', expiresAt: issued.expiresAt,
+      });
+      const rebook = await collector.post('/api/appointments').send(payload);
+      if (expired) expect(rebook.body.code).toBe('INVITATION_EXPIRED');
+      else expect(rebook.status).toBe(201);
+    } finally {
+      clock.mockRestore();
+    }
   });
 });

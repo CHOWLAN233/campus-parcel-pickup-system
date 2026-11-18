@@ -1,12 +1,15 @@
 # Open implementation decisions
 
-| ID | Question | Current local treatment | Status |
-| --- | --- | --- | --- |
-| DEC-01 | SA3 Email uniqueness/format versus SRS `studentId` + password registration | `users.email` is optional and unique; no Email field is demanded by the current frontend or API | Team discussion pending |
-| DEC-02 | Whether the 3-day window includes today and its exact boundaries | Local config defaults to today plus two days (`BOOKING_START_OFFSET_DAYS=0`, `BOOKING_DAYS=3`) | Team discussion pending |
-| DEC-03 | Cancellation cutoff and invitation release after cancellation | Cancellation endpoint not yet implemented | Team discussion pending |
-| DEC-04 | Whether only-for-another pickup is allowed; issuer's own booking conflict | No separate only-for-another flow in the current API; proxy booking uses one collector and one issuer | Team discussion pending |
-| DEC-05 | Bound invitation expiry, no-show timing/correction, and staff handover | No automatic expiry of `RESERVED`, no no-show job or staff handover yet | Team discussion pending |
-| DEC-06 | Final password length and strength wording | Local policy is 8–128 characters with a digit and a non-alphanumeric character; frontend currently relies on backend validation | Team discussion pending |
+以下项目仍待小组确认。标注为已实现的行为用于开发和联调，暂不作为最终验收标准。
 
-Do not mark provisional behavior as a final SRS acceptance criterion until the group signs it off.
+| ID | 待决项 | 建议与当前状态 | 小组需确认 |
+| --- | --- | --- | --- |
+| DEC-01 | 注册 Email | SA3 要求 Email 唯一且格式正确，SRS 注册使用学号和密码。建议先维持现有接口，数据库保留可选且唯一的 Email。 | 确认是否要求 Email；如需提交，确认必填性和验收格式。 |
+| DEC-02 | 三天预约窗口 | 建议按校园当地时间（UTC+8）计算今天及后两天，只能预约尚未开始的时段。现有开发配置默认采用该窗口。 | 确认是否包含今天、时区及日期和时段边界。 |
+| DEC-03 | 取消与邀请码释放（FR-06） | 本次暂按开始前至少 24 小时允许取消，恰好 24 小时可取消。普通/代取归还 1/2 个容量单位，重复请求不重复归还。代取码未到原过期时间则恢复 ACTIVE，否则置 EXPIRED；不延长有效期。 | 确认采用提前 24 小时或前一日 23:59；确认邀请码按原有效期恢复的规则。 |
+| DEC-04 | 代取范围和预约冲突（FR-08、FR-09） | 建议先支持本人取件时最多代取一人，不提供只代取入口；拟拒绝为已有有效预约的发码人新增代取绑定。冲突规则尚未实现。 | 确认能否只代取，以及冲突判定是同一时段还是任一未来有效预约。 |
+| DEC-05 | 取件交接和邀请码生命周期（FR-10、FR-13） | 建议邀请码对应发码学生；原 1 小时限制只管首次绑定，绑定后保持 RESERVED 直到处理。授权工作人员按整笔确认交接，预约变为 COMPLETED，邀请码变为 USED。 | 确认学生或具体包裹、谁能确认、部分领取如何处理、何时撤销或过期、交接要更新哪些记录。 |
+| DEC-06 | 密码强度 | 暂沿用现有校验：8–128 字符，含数字和非字母数字字符。 | 确认最终长度、字符规则和前后端提示文案。 |
+| DEC-07 | 未取件（FR-11） | 建议时段结束后把仍为 BOOKED 的预约标记 NO_SHOW。授权工作人员可填写原因后更正；代取未完成时建议结束邀请码并置 EXPIRED。 | 确认是否设宽限期、未取件记在谁名下、谁能更正，以及更正后预约和邀请码如何处理。 |
+| DEC-08 | 时段管理（FR-12） | 建议由管理员开放或关闭时段，第一版固定 60 容量单位。关闭只阻止新预约，已有预约保留。 | 确认可调整的字段、已有预约时能否降容量，以及关闭是否影响已有预约。 |
+| DEC-09 | 审计（FR-14） | 建议记录操作者、时间、操作、对象和结果。本次事务已写入成功取消事件；后续补交接、未取件更正和时段变更。 | 确认审计查看权限、需要记录的操作，以及是否需要记录失败结果。 |

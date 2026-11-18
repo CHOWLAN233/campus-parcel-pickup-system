@@ -2,6 +2,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { ApiError } from '../errors.js';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const CANCELLATION_NOTICE_MS = 24 * 60 * 60 * 1000;
 const BUSINESS_OFFSET_MS = 8 * 3600000;
 
 export function businessDate(timestamp) {
@@ -28,7 +29,8 @@ export function slotView(slot) {
   };
 }
 
-export function appointmentView(row) {
+export function appointmentView(row, now = Date.now()) {
+  const cancelBefore = row.start_at - CANCELLATION_NOTICE_MS;
   return {
     id: row.id,
     slotId: row.slot_id,
@@ -36,6 +38,8 @@ export function appointmentView(row) {
     endAt: new Date(row.end_at).toISOString(),
     createdAt: new Date(row.created_at).toISOString(),
     status: row.status,
+    canCancel: row.status === 'BOOKED' && now <= cancelBefore,
+    cancelBefore: new Date(cancelBefore).toISOString(),
     proxyCount: row.occupied_capacity - 1,
     occupiedCapacity: row.occupied_capacity,
     ...(row.helper_student_id ? { helperStudentId: row.helper_student_id } : {}),
@@ -66,6 +70,7 @@ export function createBookingService(db, config) {
     if (invitationCode) {
       authorization = db.prepare('SELECT * FROM pickup_authorizations WHERE code_hash = ?').get(codeHash(invitationCode));
       if (!authorization || authorization.issuer_user_id === userId) throw new ApiError(409, 'INVALID_INVITATION', 'Invalid invitation.');
+      if (authorization.status === 'EXPIRED') throw new ApiError(409, 'INVITATION_EXPIRED', 'Invitation has expired.');
       if (authorization.status !== 'ACTIVE') throw new ApiError(409, 'INVITATION_USED', 'Invitation is unavailable.');
       if (authorization.expires_at <= now) throw new ApiError(409, 'INVITATION_EXPIRED', 'Invitation has expired.');
     }
@@ -84,6 +89,34 @@ export function createBookingService(db, config) {
         .run(appointmentId, authorization.id, authorization.issuer_user_id);
     }
     return appointmentView(getAppointment.get(appointmentId));
+  });
+
+  const cancelAppointment = db.transaction((userId, appointmentId) => {
+    const now = Date.now();
+    const appointment = getAppointment.get(appointmentId);
+    if (!appointment || appointment.user_id !== userId) {
+      throw new ApiError(404, 'APPOINTMENT_NOT_FOUND', 'Appointment not found.');
+    }
+    if (appointment.status === 'CANCELLED') return appointmentView(appointment, now);
+    if (appointment.status !== 'BOOKED' || now > appointment.start_at - CANCELLATION_NOTICE_MS) {
+      throw new ApiError(409, 'CANCEL_NOT_ALLOWED', 'This booking can no longer be cancelled.');
+    }
+
+    db.prepare("UPDATE appointments SET status = 'CANCELLED', updated_at = ? WHERE id = ?")
+      .run(now, appointmentId);
+    db.prepare('UPDATE pickup_slots SET occupied = occupied - ? WHERE id = ?')
+      .run(appointment.occupied_capacity, appointment.slot_id);
+    if (appointment.occupied_capacity === 2) {
+      const released = db.prepare(`UPDATE pickup_authorizations
+        SET status = CASE WHEN expires_at > ? THEN 'ACTIVE' ELSE 'EXPIRED' END,
+            bound_appointment_id = NULL
+        WHERE bound_appointment_id = ? AND status = 'RESERVED'`).run(now, appointmentId);
+      if (released.changes !== 1) throw new Error('Missing reserved invitation for proxy booking');
+      db.prepare('DELETE FROM appointment_helpers WHERE appointment_id = ?').run(appointmentId);
+    }
+    db.prepare(`INSERT INTO audit_logs(actor_user_id, action, target_type, target_id, created_at)
+      VALUES (?, 'APPOINTMENT_CANCELLED', 'appointment', ?, ?)`).run(userId, appointmentId, now);
+    return appointmentView(getAppointment.get(appointmentId), now);
   });
 
   const issueAuthorization = db.transaction((userId) => {
@@ -108,6 +141,7 @@ export function createBookingService(db, config) {
 
   return {
     createAppointment: (...args) => createAppointment.immediate(...args),
+    cancelAppointment: (...args) => cancelAppointment.immediate(...args),
     issueAuthorization: (...args) => issueAuthorization.immediate(...args),
     getAppointment: (id) => appointmentView(getAppointment.get(id)),
   };
