@@ -8,6 +8,12 @@ export function openDatabase(filename) {
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
   if (filename !== ':memory:') db.pragma('journal_mode = WAL');
+  db.transaction(() => {
+    const columns = db.pragma('table_info(audit_logs)');
+    if (columns.length && !columns.some(({ name }) => name === 'reason')) {
+      db.exec('ALTER TABLE audit_logs ADD COLUMN reason TEXT');
+    }
+  }).immediate();
   return db;
 }
 

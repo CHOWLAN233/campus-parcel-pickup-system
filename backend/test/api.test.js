@@ -15,7 +15,7 @@ beforeEach(() => {
   db = openDatabase(':memory:');
   db.exec(readFileSync(resolve('../database/schema.sql'), 'utf8'));
   db.exec(readFileSync(resolve('../database/seed.sql'), 'utf8'));
-  const start = Date.parse(`${businessDate(Date.now() + 86400000)}T10:00:00+08:00`);
+  const start = Date.now() + 18 * 3600000;
   slotDate = businessDate(start);
   slotId = Number(db.prepare(`INSERT INTO pickup_slots(start_at, end_at, capacity, occupied, status)
     VALUES (?, ?, 60, 0, 'AVAILABLE')`).run(start, start + 3600000).lastInsertRowid);
@@ -175,5 +175,104 @@ describe('FR-06 cancellation', () => {
     } finally {
       clock.mockRestore();
     }
+  });
+});
+
+async function staffAccount(studentId, role) {
+  const agent = await registerAndLogin(studentId);
+  db.prepare('UPDATE users SET role = ? WHERE student_id = ?').run(role, studentId);
+  return agent;
+}
+
+describe('FR-10/13 handover and invitation lifecycle', () => {
+  it('requires staff and the booked time, then completes the booking and consumes the code once', async () => {
+    const collector = await registerAndLogin('STU0001');
+    const issuer = await registerAndLogin('STU0002');
+    const staff = await staffAccount('STU0003', 'STAFF');
+    const { invitationCode, id } = (await issuer.post('/api/authorizations')).body;
+    const { appointment } = (await collector.post('/api/appointments').send({ slotId, invitationCode })).body;
+    const path = `/api/staff/appointments/${appointment.id}/complete`;
+    expect((await collector.post(path)).status).toBe(403);
+    expect((await staff.post(path)).body.code).toBe('HANDOVER_NOT_ALLOWED');
+    expect((await issuer.post(`/api/authorizations/${id}/revoke`)).status).toBe(409);
+
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse(appointment.startAt));
+    try {
+      const lookup = await staff.get(`/api/staff/appointments?reference=%23${appointment.id}`);
+      expect(lookup.body.appointment).toMatchObject({ studentId: 'STU0001', authorizationValid: true, canComplete: true });
+      expect((await staff.post(path)).body.appointment).toMatchObject({ status: 'COMPLETED', authorizationStatus: 'USED' });
+      expect((await staff.post(path)).status).toBe(200);
+      expect(db.prepare("SELECT COUNT(*) AS n FROM audit_logs WHERE action = 'HANDOVER_COMPLETED'").get().n).toBe(1);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('rejects an issuer booking conflict and lets only the issuer revoke an unused code', async () => {
+    const collector = await registerAndLogin('STU0001');
+    const issuer = await registerAndLogin('STU0002');
+    const { invitationCode, id } = (await issuer.post('/api/authorizations')).body;
+    expect((await issuer.post('/api/appointments').send({ slotId })).status).toBe(201);
+    expect((await collector.post('/api/appointments').send({ slotId, invitationCode })).body.code).toBe('INVITATION_BOOKING_CONFLICT');
+    const revoke = `/api/authorizations/${id}/revoke`;
+    expect((await collector.post(revoke)).status).toBe(404);
+    expect((await issuer.post(revoke)).body.authorization.status).toBe('REVOKED');
+    expect(db.prepare('SELECT occupied FROM pickup_slots WHERE id = ?').get(slotId).occupied).toBe(1);
+  });
+});
+
+describe('FR-11 no-show and correction', () => {
+  it('records a missed pickup once, expires its code and retains a correction trail', async () => {
+    const collector = await registerAndLogin('STU0001');
+    const issuer = await registerAndLogin('STU0002');
+    const staff = await staffAccount('STU0003', 'STAFF');
+    const { invitationCode } = (await issuer.post('/api/authorizations')).body;
+    const { appointment } = (await collector.post('/api/appointments').send({ slotId, invitationCode })).body;
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse(appointment.endAt));
+    try {
+      expect((await collector.get('/api/no-shows/me')).body.records[0].appointmentId).toBe(appointment.id);
+      expect((await collector.get('/api/no-shows/me')).body.records).toHaveLength(1);
+      expect((await issuer.get('/api/no-shows/me')).body.records).toEqual([]);
+      expect((await issuer.get('/api/authorizations/me')).body.authorizations[0].status).toBe('EXPIRED');
+      const correction = `/api/staff/appointments/${appointment.id}/correct-no-show`;
+      expect((await staff.post(correction).send({ reason: '  ' })).status).toBe(400);
+      const reason = 'Verified handover from the test receipt';
+      expect((await staff.post(correction).send({ reason })).body.appointment).toMatchObject({
+        status: 'COMPLETED', authorizationStatus: 'USED',
+      });
+      expect((await collector.get('/api/no-shows/me')).body.records).toEqual([]);
+      expect(db.prepare('SELECT action, reason FROM audit_logs ORDER BY id').all()).toEqual([
+        { action: 'NO_SHOW_RECORDED', reason: null }, { action: 'NO_SHOW_CORRECTED', reason },
+      ]);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+});
+
+describe('FR-12/14 slot administration and audit', () => {
+  it('allows only admins to create and close slots, preserving bookings and recording changes', async () => {
+    const student = await registerAndLogin('STU0001');
+    const admin = await staffAccount('STU0002', 'ADMIN');
+    const start = db.prepare('SELECT end_at FROM pickup_slots WHERE id = ?').get(slotId).end_at;
+    const values = { startAt: new Date(start).toISOString(), endAt: new Date(start + 3600000).toISOString() };
+    expect((await student.post('/api/admin/slots').send(values)).status).toBe(403);
+    for (const bad of [{ ...values, capacity: 59 }, { ...values, endAt: values.startAt }]) {
+      expect((await admin.post('/api/admin/slots').send(bad)).status).toBe(400);
+    }
+    const created = await admin.post('/api/admin/slots').send(values);
+    expect(created.status).toBe(201);
+    expect((await admin.post('/api/admin/slots').send(values)).body.code).toBe('SLOT_OVERLAP');
+    const id = created.body.slot.id;
+    expect((await student.post('/api/appointments').send({ slotId: id })).status).toBe(201);
+    expect((await admin.patch(`/api/admin/slots/${id}`).send({ status: 'CLOSED', capacity: 59 })).status).toBe(400);
+    const closed = await admin.patch(`/api/admin/slots/${id}`).send({ status: 'CLOSED' });
+    expect(closed.body.slot).toMatchObject({ status: 'CLOSED', occupied: 1, capacity: 60 });
+    const another = await registerAndLogin('STU0003');
+    expect((await another.post('/api/appointments').send({ slotId: id })).body.code).toBe('SLOT_FULL');
+    expect((await student.get('/api/appointments/me')).body.appointments[0].status).toBe('BOOKED');
+    expect((await student.get('/api/admin/audit-logs')).status).toBe(403);
+    expect((await admin.get('/api/admin/audit-logs')).body.records.map(({ action }) => action))
+      .toEqual(['SLOT_CLOSED', 'SLOT_CREATED']);
   });
 });

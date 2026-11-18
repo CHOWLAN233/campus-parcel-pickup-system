@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "dev:role": "node scripts/set-dev-role.js",
     "db:init": "node scripts/init-db.js",
     "test": "vitest run"
   },

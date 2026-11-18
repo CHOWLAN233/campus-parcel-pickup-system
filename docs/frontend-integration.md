@@ -11,8 +11,9 @@ The supplied frontend archive was inspected and only its 25 `.html`, `.css`, and
 | Own bookings and create | `GET /api/appointments/me`, `POST /api/appointments` | Implemented, including atomic 1/2-unit capacity |
 | Issue/list invitation | `POST /api/authorizations`, `GET /api/authorizations/me` | Implemented; raw code returned only on issue |
 | Cancel booking | `POST /api/appointments/:id/cancel` | Implemented with provisional DEC-03 rules; appointment responses include `canCancel` and `cancelBefore` |
-| Revoke invitation | `POST /api/authorizations/:id/revoke` | Pending rule decision |
-| No-show, staff, admin | `/api/no-shows/*`, `/api/staff/*`, `/api/admin/*` | Later phase |
+| Revoke invitation | `POST /api/authorizations/:id/revoke` | Implemented for unused, unexpired codes |
+| No-show history, staff lookup and handover, admin slots | `/api/no-shows/*`, `/api/staff/*`, `/api/admin/*` | Implemented for existing pages |
+| No-show correction and audit query | `POST /api/staff/appointments/:id/correct-no-show`, `GET /api/admin/audit-logs` | API available; no dedicated frontend controls |
 
 The backend generates an eight-character invitation code for additional guessing resistance; the frontend's example placeholder must match that length. No real invitation code is committed. The imported frontend's `file:` preview uses an in-memory demo; HTTP always calls the real API.
 

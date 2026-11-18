@@ -150,7 +150,6 @@ window.ParcelApi = (() => {
       if (typeof item.invitationCode !== "string" || !item.invitationCode.trim()) throw apiError("INVALID_RESPONSE");
       return item;
     },
-    // 以下撤销、工作人员查询和管理员创建路径是前端建议扩展，见接口文档。
     revokeAuthorization: async (id) => {
       const data = await request(`/authorizations/${idPath(id)}/revoke`, { method: "POST" });
       return readAuthorization(data?.authorization ?? data);
