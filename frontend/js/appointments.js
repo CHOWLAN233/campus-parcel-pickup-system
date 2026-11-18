@@ -3,7 +3,7 @@
   const A = window.ExpressBook, $ = A.find;
   let appointments = [];
   function canCancel(item) {
-    return item.status === "BOOKED" && item.canCancel !== false && (!item.cancelBefore || Date.parse(item.cancelBefore) > Date.now());
+    return item.status === "BOOKED" && item.canCancel !== false && (!item.cancelBefore || Date.parse(item.cancelBefore) >= Date.now());
   }
   function render() {
     $("active-total").textContent = String(appointments.filter((item) => item.status === "BOOKED").length);

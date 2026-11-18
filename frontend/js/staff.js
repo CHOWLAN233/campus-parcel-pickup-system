@@ -2,7 +2,7 @@
 (() => {
   const A = window.ExpressBook, $ = A.find;
   let current;
-  function updateButton() { $("complete-button").disabled = !current || current.status !== "BOOKED" || current.authorizationValid === false || !$("staff-verified").checked; }
+  function updateButton() { $("complete-button").disabled = !current || current.status !== "BOOKED" || current.authorizationValid === false || current.canComplete === false || !$("staff-verified").checked; }
   function render() {
     $("staff-result").hidden = !current;
     $("staff-verified").checked = false;
@@ -14,8 +14,9 @@
       const block = A.node("div"); block.append(A.node("dt", "", label), A.node("dd", "", value)); facts.append(block);
     }
     $("staff-details").append(facts);
-    if (current.authorizationValid === false) $("staff-details").append(A.node("p", "soft-note", "The authorization is not valid. Do not hand over a friend’s parcel."));
+    if (current.status === "BOOKED" && current.authorizationValid === false) $("staff-details").append(A.node("p", "soft-note", "The authorization is not valid. Do not hand over a friend’s parcel."));
     if (current.status !== "BOOKED") $("staff-details").append(A.node("p", "soft-note", "This booking is not awaiting collection. No further handover can be confirmed."));
+    if (current.status === "BOOKED" && current.canComplete === false) $("staff-details").append(A.node("p", "soft-note", "Handover can be confirmed during the booked time slot."));
     updateButton();
   }
   $("staff-verified").addEventListener("change", updateButton);
@@ -33,7 +34,7 @@
     $("staff-reference").disabled = false;
   });
   $("complete-button").addEventListener("click", async () => {
-    if (A.locked || !current || current.status !== "BOOKED" || !$("staff-verified").checked || current.authorizationValid === false) return;
+    if (A.locked || !current || current.status !== "BOOKED" || !$("staff-verified").checked || current.authorizationValid === false || current.canComplete === false) return;
     const target = current;
     if (!await A.confirm("Confirm parcel handover?", `Booking ${A.reference(target)} will be marked completed${target.proxyCount === 1 ? " and the bound invitation marked used" : ""}. Confirm only after all parcels have been handed over.`, "Confirm handover")) return;
     $("staff-reference").disabled = true; $("staff-verified").disabled = true;

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { ApiError } from '../errors.js';
-import { appointmentView, businessDate, createBookingService, dateInWindow, slotView } from '../services/booking.js';
+import { appointmentView, businessDate, createBookingService, dateInWindow, slotView, sweepNoShows, writeAudit } from '../services/booking.js';
 
 const userView = (user) => ({ id: user.id, studentId: user.student_id, role: user.role });
 const validDate = (value) => {
@@ -9,6 +9,23 @@ const validDate = (value) => {
   const parsed = Date.parse(`${value}T00:00:00Z`);
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value;
 };
+
+function parseId(value) {
+  const id = Number(value);
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(id)) {
+    throw new ApiError(400, 'INVALID_INPUT', 'Invalid identifier.');
+  }
+  return id;
+}
+
+function slotTime(value) {
+  if (typeof value !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{3})?(?:Z|[+-]\d{2}:[0-5]\d)$/.test(value)
+    || !validDate(value.slice(0, 10))) return NaN;
+  return Date.parse(value);
+}
+
+const validSlotStatus = (value) => value === 'AVAILABLE' || value === 'CLOSED';
 
 export function createApiRouter(db, config) {
   const router = Router();
@@ -24,13 +41,19 @@ export function createApiRouter(db, config) {
     next();
   }
 
-  function requireStudent(request, response, next) {
-    requireUser(request, response, (error) => {
-      if (error) return next(error);
-      if (request.user.role !== 'STUDENT') return next(new ApiError(403, 'FORBIDDEN', 'Student access required.'));
-      next();
-    });
+  function requireRole(...roles) {
+    return (request, response, next) => {
+      requireUser(request, response, (error) => {
+        if (error) return next(error);
+        if (!roles.includes(request.user.role)) return next(new ApiError(403, 'FORBIDDEN', 'Access denied.'));
+        next();
+      });
+    };
   }
+
+  const requireStudent = requireRole('STUDENT');
+  const requireStaff = requireRole('STAFF', 'ADMIN');
+  const requireAdmin = requireRole('ADMIN');
 
   router.post('/auth/register', async (request, response) => {
     const { studentId, password } = request.body ?? {};
@@ -83,7 +106,7 @@ export function createApiRouter(db, config) {
 
   router.get('/slots', requireUser, (request, response) => {
     const { date } = request.query;
-    if (!validDate(date) || !dateInWindow(date, Date.now(), config)) {
+    if (!validDate(date) || (request.user.role !== 'ADMIN' && !dateInWindow(date, Date.now(), config))) {
       throw new ApiError(400, 'INVALID_DATE', 'Date is outside the booking window.');
     }
     const slots = db.prepare('SELECT * FROM pickup_slots ORDER BY start_at').all()
@@ -92,13 +115,14 @@ export function createApiRouter(db, config) {
   });
 
   router.get('/appointments/me', requireStudent, (request, response) => {
+    sweepNoShows(db);
     const rows = db.prepare(`SELECT a.*, s.start_at, s.end_at, u.student_id AS helper_student_id
       FROM appointments a JOIN pickup_slots s ON s.id = a.slot_id
       LEFT JOIN appointment_helpers h ON h.appointment_id = a.id
       LEFT JOIN pickup_authorizations pa ON pa.id = h.authorization_id
       LEFT JOIN users u ON u.id = pa.issuer_user_id
       WHERE a.user_id = ? ORDER BY a.created_at DESC, a.id DESC`).all(request.user.id);
-    response.json({ appointments: rows.map(appointmentView) });
+    response.json({ appointments: rows.map((row) => appointmentView(row)) });
   });
 
   router.post('/appointments', requireStudent, (request, response) => {
@@ -111,7 +135,13 @@ export function createApiRouter(db, config) {
     response.status(201).json({ appointment });
   });
 
+  router.post('/appointments/:id/cancel', requireStudent, (request, response) => {
+    const appointmentId = parseId(request.params.id);
+    response.json({ appointment: booking.cancelAppointment(request.user.id, appointmentId) });
+  });
+
   router.get('/authorizations/me', requireStudent, (request, response) => {
+    sweepNoShows(db);
     const rows = db.prepare(`SELECT id,
       CASE WHEN status = 'ACTIVE' AND expires_at <= ? THEN 'EXPIRED' ELSE status END AS status,
       expires_at FROM pickup_authorizations WHERE issuer_user_id = ? ORDER BY id DESC`)
@@ -121,7 +151,103 @@ export function createApiRouter(db, config) {
   });
 
   router.post('/authorizations', requireStudent, (request, response) => {
+    sweepNoShows(db);
     response.status(201).json(booking.issueAuthorization(request.user.id));
+  });
+
+  router.post('/authorizations/:id/revoke', requireStudent, (request, response) => {
+    response.json({ authorization: booking.revokeAuthorization(request.user.id, parseId(request.params.id)) });
+  });
+
+  router.get('/no-shows/me', requireStudent, (request, response) => {
+    sweepNoShows(db);
+    const records = db.prepare(`SELECT n.id, n.appointment_id, n.recorded_at, s.start_at, s.end_at
+      FROM no_show_records n JOIN appointments a ON a.id = n.appointment_id
+      JOIN pickup_slots s ON s.id = a.slot_id WHERE a.user_id = ?
+      ORDER BY n.recorded_at DESC, n.id DESC`).all(request.user.id);
+    response.json({ records: records.map((row) => ({
+      id: row.id,
+      appointmentId: row.appointment_id,
+      recordedAt: new Date(row.recorded_at).toISOString(),
+      startAt: new Date(row.start_at).toISOString(),
+      endAt: new Date(row.end_at).toISOString(),
+    })) });
+  });
+
+  router.get('/staff/appointments', requireStaff, (request, response) => {
+    const { reference } = request.query;
+    const id = parseId(typeof reference === 'string' ? reference.trim().replace(/^#/, '') : undefined);
+    sweepNoShows(db);
+    response.json({ appointment: booking.getStaffAppointment(id) });
+  });
+
+  router.post('/staff/appointments/:id/complete', requireStaff, (request, response) => {
+    response.json({ appointment: booking.completeAppointment(request.user.id, parseId(request.params.id)) });
+  });
+
+  router.post('/staff/appointments/:id/correct-no-show', requireStaff, (request, response) => {
+    const reason = typeof request.body?.reason === 'string' ? request.body.reason.trim() : '';
+    if (!reason || reason.length > 300) {
+      throw new ApiError(400, 'INVALID_INPUT', 'Enter a correction reason of at most 300 characters.');
+    }
+    const id = parseId(request.params.id);
+    sweepNoShows(db);
+    response.json({ appointment: booking.completeAppointment(request.user.id, id, reason) });
+  });
+
+  router.post('/admin/slots', requireAdmin, (request, response) => {
+    const { startAt, endAt, capacity = 60, status = 'AVAILABLE' } = request.body ?? {};
+    const start = slotTime(startAt);
+    const end = slotTime(endAt);
+    const slot = db.transaction(() => {
+      const now = Date.now();
+      if (!(start > now) || end - start !== 3600000 || capacity !== 60 || !validSlotStatus(status)) {
+        throw new ApiError(400, 'INVALID_INPUT', 'Use a future one-hour slot, capacity 60, and a valid status.');
+      }
+      if (db.prepare('SELECT 1 FROM pickup_slots WHERE start_at < ? AND end_at > ?').get(end, start)) {
+        throw new ApiError(409, 'SLOT_OVERLAP', 'The pickup slot overlaps an existing slot.');
+      }
+      const { lastInsertRowid } = db.prepare(
+        'INSERT INTO pickup_slots(start_at, end_at, capacity, status) VALUES (?, ?, 60, ?)',
+      ).run(start, end, status);
+      const id = Number(lastInsertRowid);
+      writeAudit(db, request.user.id, 'SLOT_CREATED', 'slot', id, now);
+      return db.prepare('SELECT * FROM pickup_slots WHERE id = ?').get(id);
+    }).immediate();
+    response.status(201).json({ slot: slotView(slot) });
+  });
+
+  router.patch('/admin/slots/:id', requireAdmin, (request, response) => {
+    const id = parseId(request.params.id);
+    const { status, capacity } = request.body ?? {};
+    if (!validSlotStatus(status)) throw new ApiError(400, 'INVALID_INPUT', 'Invalid slot status.');
+    const slot = db.transaction(() => {
+      const row = db.prepare('SELECT * FROM pickup_slots WHERE id = ?').get(id);
+      if (!row) throw new ApiError(404, 'NOT_FOUND', 'Slot not found.');
+      if (capacity !== undefined && capacity !== row.capacity) {
+        throw new ApiError(400, 'INVALID_INPUT', 'Slot capacity cannot be changed.');
+      }
+      if (status !== row.status) {
+        db.prepare('UPDATE pickup_slots SET status = ? WHERE id = ?').run(status, id);
+        writeAudit(db, request.user.id, status === 'CLOSED' ? 'SLOT_CLOSED' : 'SLOT_OPENED', 'slot', id, Date.now());
+      }
+      return { ...row, status };
+    }).immediate();
+    response.json({ slot: slotView(slot) });
+  });
+
+  router.get('/admin/audit-logs', requireAdmin, (_request, response) => {
+    const rows = db.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC, id DESC LIMIT 100').all();
+    response.json({ records: rows.map((row) => ({
+      id: row.id,
+      actorUserId: row.actor_user_id,
+      action: row.action,
+      targetType: row.target_type,
+      targetId: row.target_id,
+      createdAt: new Date(row.created_at).toISOString(),
+      reason: row.reason,
+      result: 'SUCCESS',
+    })) });
   });
 
   return router;

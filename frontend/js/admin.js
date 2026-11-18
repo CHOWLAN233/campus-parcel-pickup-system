@@ -18,7 +18,7 @@
     A.state("admin-state", slots.length ? "" : "No slots listed for this date. Create one below.");
     for (const slot of slots) {
       const row = A.node("tr"); row.append(A.node("td", "", `${A.time(slot.startAt)} – ${A.time(slot.endAt)}`), A.node("td", "", slot.occupied));
-      const capCell = A.node("td"), capacity = A.node("input"); capacity.type = "number"; capacity.value = String(slot.capacity); capacity.min = String(Math.max(1, slot.occupied)); capacity.max = "60"; capacity.step = "1"; capacity.setAttribute("aria-label", `Capacity for ${A.time(slot.startAt)}`); capCell.append(capacity); row.append(capCell);
+      const capCell = A.node("td"), capacity = A.node("input"); capacity.type = "number"; capacity.value = String(slot.capacity); capacity.readOnly = true; capacity.setAttribute("aria-label", `Capacity for ${A.time(slot.startAt)}`); capCell.append(capacity); row.append(capCell);
       const statusCell = A.node("td"), status = A.node("select"); status.setAttribute("aria-label", `Availability for ${A.time(slot.startAt)}`);
       for (const [value, text] of [["AVAILABLE", "Open"], ["CLOSED", "Closed"]]) { const option = A.node("option", "", text); option.value = value; status.append(option); }
       status.value = slot.status === "CLOSED" ? "CLOSED" : "AVAILABLE"; statusCell.append(status); row.append(statusCell);

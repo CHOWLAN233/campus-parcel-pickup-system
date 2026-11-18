@@ -14,3 +14,17 @@ Owners: Developer A; Backend Developer
 | 2026-11-13 | Week 7 | Backend Developer | Uploaded the reviewed source to a separate branch and opened draft PR #2 | `feature/backend-foundation`, `https://github.com/CHOWLAN233/campus-parcel-pickup-system/pull/2` | Draft review open; `main` unchanged | Email and other pending rules remain in `DEC-01`–`DEC-06` | Keep incomplete P1 work explicit in the PR and wait for team review before merge | Confirm decisions and request reviewer feedback |  |
 
 The implementation entries follow the actual sequence. The 10 Nov baseline is supported by the repository history; backend code and integration were performed on 13 Nov. No completion is claimed for 11–12 Nov because no dated evidence was available. This avoids backdating contributions while preserving the requested starting date.
+
+## Backend PR log, 2026-11-13 to 2026-11-18
+
+The reporting dates distribute milestones from the first backend PR through 18 Nov in implementation order. Entries allocated to 15–17 Nov were implemented and verified on 18 Nov.
+
+| Reporting date | Public member label | Work and linked ID | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| 2026-11-13 | Backend Developer | Published P0 backend and frontend integration | [PR #2](https://github.com/CHOWLAN233/campus-parcel-pickup-system/pull/2) | GitHub PR date |
+| 2026-11-14 | Backend Developer | Merged backend foundation into main | PR #2, merge commit `4b9567d` | GitHub merge date |
+| 2026-11-15 | Backend Developer | Cancellation, capacity and invitation release (FR-06) | Booking service and API tests | Allocated entry; implemented 18 Nov |
+| 2026-11-16 | Backend Developer | Staff handover, invitation consumption/revocation and booking conflicts (FR-10, FR-13) | Booking service and staff API | Allocated entry; implemented 18 Nov |
+| 2026-11-17 | Backend Developer | Automatic no-show, student history and staff correction with reason (FR-11) | Booking service and no-show API | Allocated entry; implemented 18 Nov |
+| 2026-11-18 | Backend Developer | Admin slot creation and opening/closing; audited P1 transitions (FR-12, FR-14) | Admin API, audit schema and API tests | Implemented 18 Nov |
+| 2026-11-18 | Backend Developer | Verified P0/P1, synced DEC-01–DEC-09 and updated [PR #3](https://github.com/CHOWLAN233/campus-parcel-pickup-system/pull/3) | API tests, decision log and SRS baseline | Provisional for review |

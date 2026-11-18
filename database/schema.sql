@@ -71,5 +71,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   action TEXT NOT NULL,
   target_type TEXT NOT NULL,
   target_id INTEGER,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  reason TEXT
 );
